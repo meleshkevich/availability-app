@@ -6,7 +6,12 @@
       </li>
       <li v-if="isLoggedIn()">
         <NuxtLink to="/services"> Service List </NuxtLink>
+         
       </li>
+      <li v-if="isLoggedIn()">
+       <NuxtLink to="/myServices"> My Services </NuxtLink>
+      </li>
+      
       <li v-if="admin">
         <NuxtLink to="/admin"> Admin </NuxtLink>
       </li>
@@ -42,6 +47,9 @@ ul {
 li {
   color: white;
   margin-right: 1rem;
+  a {
+    color: white;
+  }
 }
 .logout {
   margin-left: auto;

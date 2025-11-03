@@ -9,16 +9,10 @@ export const useDataStore = definePiniaStore('data-store', () => {
     service: '',
   });
 
-  const resetNotes = () => {
-    console.log('reset notes');
-    (notesInput.sailing = ''),
-      (notesInput.date = ''),
-      (notesInput.service = '');
-  };
-
+ 
   const fetchData = async () => {
     tableData.value = [];
-    const notesResponse = await supabase.from('notes').select();
+    const notesResponse = await supabase.from('services').select();
     // show all notes from DB
     notesResponse.data.forEach(async (el, i) => {
       const res = await supabase
@@ -50,6 +44,6 @@ export const useDataStore = definePiniaStore('data-store', () => {
   return {
     notesInput,
     fetchData,
-    resetNotes,
+    
   };
 });

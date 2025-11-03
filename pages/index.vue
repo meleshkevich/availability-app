@@ -13,8 +13,7 @@
 <script setup>
 const { isLoggedIn } = useAuth();
 const { supabase } = useSupabase();
-// TODO: UI library: https://louismazel.github.io/maz-ui/
-// TODO: create .env with DB credentials
+ 
 </script>
 
 <style scoped>
