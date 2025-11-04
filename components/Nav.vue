@@ -15,6 +15,9 @@
       <li v-if="admin">
         <NuxtLink to="/admin"> Admin </NuxtLink>
       </li>
+         <li v-if="admin">
+        <NuxtLink to="/guides"> Guides </NuxtLink>
+      </li>
       <li v-if="isLoggedIn()" class="logout" @click="signOut">
         Logout, {{ user.identities[0].identity_data.email }}
       </li>
@@ -26,7 +29,7 @@ const { signOut, isLoggedIn, user } = useAuth();
 const admin = ref(false);
 onMounted(() => {
   setTimeout(() => {
-    user.value.id === "5ef9d62d-5162-439e-9760-d5f2e265d853"
+    user.value.id === "6bd6594f-6dd9-403e-8fa5-01c48aed8bf1"
       ? (admin.value = true)
       : (admin.value = false);
   }, 0);

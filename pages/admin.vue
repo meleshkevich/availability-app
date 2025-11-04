@@ -15,7 +15,7 @@ definePageMeta({ middleware: "auth" });
 </script>
 <style scoped>
 .container {
-  max-width: 50%;
+  max-width: 90%;
   margin: 0 auto;
   padding: 3rem 0;
   height: 90vh;
