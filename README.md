@@ -1,4 +1,5 @@
 🧭 availability-app
+
 A web application for managing guides’ service availability and assignments — built with Nuxt 3, Supabase, and Element Plus.
 
 ⚙️ Tech Stack
