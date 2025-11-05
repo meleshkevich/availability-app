@@ -41,7 +41,7 @@ watchEffect(() => checkAdmin())
 
 function checkAdmin() {
   // 🔧 замени ID на реальный или используй флаг из user_metadata
-  admin.value = user?.value?.id === '6bd6594f-6dd9-403e-8fa5-01c48aed8bf1'
+  admin.value = user?.value?.id === '9ab65b6c-f155-4364-8276-d4be1815fa2c'
 }
 </script>
 

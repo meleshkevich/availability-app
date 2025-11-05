@@ -3,7 +3,7 @@
     <!-- Фильтры и кнопка Refresh — во всех режимах -->
     <div class="filters">
       <el-input v-model="q" placeholder="Search service/sailing…" clearable @input="debouncedLoad" />
-      <el-input v-model="guide" placeholder="Guide name/email…" clearable @input="debouncedLoad" />
+      <el-input v-if="isAdminMode"  v-model="guide" placeholder="Guide name/email…" clearable @input="debouncedLoad" />
       <el-input v-model="sailing" placeholder="Sailing" clearable @input="debouncedLoad" />
       <el-date-picker
         v-model="dateRange"
@@ -21,7 +21,8 @@
       </el-select>
       <el-button @click="load" :loading="loading">Refresh</el-button>
     </div>
-
+  </el-card>
+  <el-card class="card"> 
     <el-table
       :data="visibleRows"
       v-loading="loading"
@@ -48,7 +49,7 @@
               <span class="guide-name">{{ displayForUser(row.confirmed.user_id, row) }}</span>
               <div class="right">
                 <el-tag type="success" effect="light">Confirmed</el-tag>
-                <el-button size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
+                
               </div>
             </div>
           </template>
@@ -103,6 +104,7 @@
               :loading="row._busy"
               @click="approveCxl(row)"
             >Approve CXL</el-button>
+            <el-button v-if="row.confirmed?.user_id" size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
           </template>
         </template>
       </el-table-column>
