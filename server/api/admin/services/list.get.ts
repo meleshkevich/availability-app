@@ -18,9 +18,9 @@ export default defineEventHandler(async (event) => {
   const wantAll = String(q.all ?? '') === '1'
 
   // 1️⃣ Базовый список сервисов (id + базовые поля)
-  let svcQuery = admin.from('services')
-    .select('*', { count: 'exact' })
-    .order('date', { ascending: true })
+let svcQuery = admin.from('services')
+  .select('id, sailing, date, service_type_id, service_types(name)', { count: 'exact' })
+  .order('date', { ascending: true })
 
   if (sailing) svcQuery = svcQuery.eq('sailing', sailing)
   if (dateFrom) svcQuery = svcQuery.gte('date', dateFrom)
@@ -83,11 +83,12 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const itemsAll = services.map(s => {
-    const cands = bySvc[s.id] || []
-    const confirmed = cands.find(c => c.status === 'confirmed') || null
-    return { ...s, candidates: cands, confirmed }
-  })
+const itemsAll = services.map(s => {
+  const cands = bySvc[s.id] || []
+  const confirmed = cands.find(c => c.status === 'confirmed') || null
+  const serviceName = (s as any).service_types?.name ?? (s as any).service ?? null
+  return { ...s, service: serviceName, candidates: cands, confirmed }
+})
 
   // 6️⃣ Если нужен весь набор (all=1) — возвращаем всё без пагинации
   if (wantAll) {

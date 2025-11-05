@@ -1,6 +1,7 @@
 <template>
   <div class="container">
     <h3>Admin — Services</h3>
+     <AdminAddService />
     <ServiceTable mode="admin" />
   </div>
 </template>
