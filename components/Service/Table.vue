@@ -40,10 +40,13 @@
       <el-table-column v-if="isAdminMode" label="Guide" min-width="320">
         <template #default="{ row }">
           <template v-if="row.confirmed?.user_id">
-            <span class="guide-name">{{ displayForUser(row.confirmed.user_id, row) }}</span>
-            <el-tag type="success" effect="light" class="ml-2">Confirmed</el-tag>
-            <el-button class="ml-2" size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
-          </template>
+  <div class="guide-cell">
+    <span class="guide-name">{{ displayForUser(row.confirmed.user_id, row) }}</span>
+    <div class="right">
+      <el-tag type="success" effect="light">Confirmed</el-tag>
+    </div>
+  </div>
+</template>
           <template v-else>
             <el-select v-model="row._selected" placeholder="Select guide" filterable clearable style="width:100%">
               <el-option
@@ -80,6 +83,9 @@
 
           <!-- ADMIN MODE -->
           <template v-else>
+            <el-button 
+            v-if="row.confirmed?.user_id"
+             size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
             <el-button
               v-if="!row.confirmed?.user_id"
               type="primary"
@@ -441,4 +447,15 @@ function formatGuide(c) {
 .opt { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
 .ml-2 { margin-left: 8px; }
 .guide-name { font-weight: 500; }
+.guide-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-cell .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 </style>
