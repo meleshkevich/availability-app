@@ -29,16 +29,16 @@
   flex: 1 1 auto;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 8px 16px;
 }
 
-/* необязательный футер
-.footer {
+/* необязательный футер */
+/* .footer {
   border-top: 1px solid #eee;
   padding: 12px 16px;
   text-align: center;
   color: #666;
   font-size: 14px;
-}
-*/
+} */
+
 </style>

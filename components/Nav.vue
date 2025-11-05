@@ -12,6 +12,9 @@
         <li>
           <NuxtLink to="/myServices" class="nav-link" active-class="active">My Services</NuxtLink>
         </li>
+         <li v-if="isLoggedIn && admin">
+          <NuxtLink to="/guides" class="nav-link" active-class="active">Guides</NuxtLink>
+        </li>
         <li v-if="isLoggedIn && admin">
           <NuxtLink to="/admin" class="nav-link" active-class="active">Admin</NuxtLink>
         </li>
