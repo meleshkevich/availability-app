@@ -46,17 +46,31 @@ nav {
   background: black;
   height: 10vh;
 }
+
 ul {
+  list-style-type: none;  
   display: flex;
   height: 100%;
   align-items: center;
   padding: 0 2rem;
 }
+
 li {
   color: white;
   margin-right: 1rem;
+
   a {
     color: white;
+    text-decoration: none; /* убираем стандартное подчёркивание */
+    transition: text-decoration 0.2s ease;
+  }
+
+  a:hover {
+    text-decoration: underline; /* добавляем подчёркивание при hover */
+  }
+
+    .router-link-exact-active {
+    text-decoration: underline;
   }
 }
 .logout {

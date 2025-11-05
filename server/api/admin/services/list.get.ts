@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const search  = String(q.q ?? '').trim().toLowerCase()
   const sailing = String(q.sailing ?? '').trim()
-  const status  = String(q.status ?? '').trim() // tentative|confirmed|cxl_requested|cxl
+  const status  = String(q.statusFilter ?? '').trim() // tentative|confirmed|cxl_requested|cxl
   const guideQ  = String(q.guide ?? '').trim().toLowerCase()
   const dateFrom = String(q.dateFrom ?? '')
   const dateTo   = String(q.dateTo ?? '')

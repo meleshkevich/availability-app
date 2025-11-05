@@ -15,7 +15,7 @@
         </el-button>
       </div>
     </div>
-
+     <el-card class="card">
     <el-table :data="items" v-loading="loading" style="width:100%">
       <el-table-column prop="display_name" label="Display name" min-width="200">
         <template #default="{ row }">
@@ -45,6 +45,7 @@
         @current-change="onPage"
       />
     </div>
+    </el-card>
   </div>
 </template>
 

@@ -1,5 +1,4 @@
 🧭 availability-app
-
 A web application for managing guides’ service availability and assignments — built with Nuxt 3, Supabase, and Element Plus.
 
 ⚙️ Tech Stack
@@ -19,6 +18,7 @@ Realtime: Supabase Realtime Channels
 PDF Export: jsPDF (placeholder, coming soon)
 
 🚀 Getting Started
+
 1️⃣ Clone & Install
 git clone <your-repo-url>
 cd availability-app
@@ -27,7 +27,6 @@ npm install
 2️⃣ Create .env file in project root
 NUXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
 NUXT_PUBLIC_SUPABASE_ANON_KEY=<your-public-anon-key>
-
 
 ⚠️ Never use the service role key on the frontend.
 
