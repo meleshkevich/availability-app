@@ -21,9 +21,13 @@
       </el-select>
       <el-button @click="load" :loading="loading">Refresh</el-button>
     </div>
-    </el-card>
-     <el-card class="card">
-    <el-table :data="visibleRows" v-loading="loading" style="width:100%">
+
+    <el-table
+      :data="visibleRows"
+      v-loading="loading"
+      :row-class-name="rowClassName"
+      style="width:100%"
+    >
       <!-- базовые поля -->
       <el-table-column prop="sailing" label="Sailing" width="150" />
       <el-table-column prop="date" label="Date" width="120" />
@@ -40,13 +44,14 @@
       <el-table-column v-if="isAdminMode" label="Guide" min-width="320">
         <template #default="{ row }">
           <template v-if="row.confirmed?.user_id">
-  <div class="guide-cell">
-    <span class="guide-name">{{ displayForUser(row.confirmed.user_id, row) }}</span>
-    <div class="right">
-      <el-tag type="success" effect="light">Confirmed</el-tag>
-    </div>
-  </div>
-</template>
+            <div class="guide-cell">
+              <span class="guide-name">{{ displayForUser(row.confirmed.user_id, row) }}</span>
+              <div class="right">
+                <el-tag type="success" effect="light">Confirmed</el-tag>
+                <el-button size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
+              </div>
+            </div>
+          </template>
           <template v-else>
             <el-select v-model="row._selected" placeholder="Select guide" filterable clearable style="width:100%">
               <el-option
@@ -83,9 +88,6 @@
 
           <!-- ADMIN MODE -->
           <template v-else>
-            <el-button 
-            v-if="row.confirmed?.user_id"
-             size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
             <el-button
               v-if="!row.confirmed?.user_id"
               type="primary"
@@ -106,14 +108,14 @@
       </el-table-column>
     </el-table>
 
-    <!-- Пагинация — во всех режимах -->
+    <!-- Пагинация — по группам -->
     <div class="pagination">
       <el-pagination
         background
         layout="prev, pager, next"
         :page-size="perPage"
         :current-page="page"
-        :total="count"
+        :total="groupsTotal"
         @current-change="onPage"
       />
     </div>
@@ -143,13 +145,16 @@ const status = ref('')
 const dateRange = ref([])
 const page = ref(1)
 const perPage = ref(20)
-const count = ref(0)
 
+// данные и состояния
 const user = ref(null)
-const rows = ref([])        // в admin — серверные items; в user — локально собранный список
+const rows = ref([])            // плоская лента (user: уже со _myStatus; admin: элементы из API)
+const groups = ref([])          // [{ sailing, firstDate, items: [] }]
+const groupsTotal = ref(0)
 const loading = ref(false)
 let channel = null
 
+// словари статусов
 const statusLabel = (s) => ({
   none: 'Not Selected',
   tentative: 'Tentative',
@@ -166,49 +171,18 @@ const statusType = (s) => ({
   cxl: 'danger'
 }[s || 'none'])
 
-/** Виденые строки:
- *  - admin: rows как есть (сервер уже вернул страницу)
- *  - user (all/mine): применяем локально фильтры + пагинацию
- */
-const visibleRows = computed(() => {
-  if (isAdminMode.value) return rows.value
+// формат в селекте
+function formatGuide(c) {
+  return c?.display_name || c?.email || c?.user_id || ''
+}
 
-  // локальная фильтрация/пагинация
-  const [from, to] = dateRange.value || []
-  const df = from ? new Date(from).toISOString().slice(0,10) : null
-  const dt = to ? new Date(to).toISOString().slice(0,10) : null
-  const ql = (q.value || '').toLowerCase()
-  const sail = (sailing.value || '').toLowerCase()
-
-  let merged = (rows.value || []).slice()
-
-  // mode="mine" — только выбранные мною
-  if (props.mode === 'mine') {
-    merged = merged.filter(r => r._myStatus && r._myStatus !== 'none')
-  }
-
-  merged = merged.filter(r => {
-    const matchesSearch =
-      !ql ||
-      String(r.service || '').toLowerCase().includes(ql) ||
-      String(r.sailing || '').toLowerCase().includes(ql)
-    const matchesSailing = !sail || String(r.sailing || '').toLowerCase().includes(sail)
-    const dateStr = String(r.date || '').slice(0,10)
-    const matchesDate = (!df || dateStr >= df) && (!dt || dateStr <= dt)
-    const matchesStatus = !status.value || r._myStatus === status.value
-    return matchesSearch && matchesSailing && matchesDate && matchesStatus
-  })
-
-  count.value = merged.length
-  const start = (page.value - 1) * perPage.value
-  return merged.slice(start, start + perPage.value)
-})
-
+// имя гида по id из строки
 function displayForUser(userId, row) {
   const c = (row.candidates || []).find(x => x.user_id === userId)
   return c?.display_name || c?.email || userId
 }
 
+// показать Approve CXL?
 const showApproveCxl = (row) => {
   if (!isAdminMode.value) return false
   if (!row._selected) return false
@@ -216,8 +190,14 @@ const showApproveCxl = (row) => {
   return sel?.status === 'cxl_requested'
 }
 
+// zebra по индексу группы
+function rowClassName({ row }) {
+  return row._groupIdx % 2 === 0 ? 'grp-even' : 'grp-odd'
+}
+
 onMounted(async () => {
   await load()
+  // realtime: на любое изменение service_guides — перезагружаем
   channel = supabase
     .channel('service-table')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'service_guides' }, () => {
@@ -230,6 +210,75 @@ onBeforeUnmount(async () => {
   if (channel) await supabase.removeChannel(channel)
 })
 
+/** ГРУППИРОВКА */
+function buildGroups(flatRows) {
+  const bySailing = new Map()
+  for (const r of flatRows) {
+    const sail = String(r.sailing || '').trim()
+    if (!bySailing.has(sail)) bySailing.set(sail, [])
+    bySailing.get(sail).push(r)
+  }
+  const groupsRaw = Array.from(bySailing.entries()).map(([sailing, items]) => {
+    items.sort((a, b) => String(a.date).localeCompare(String(b.date)))
+    const firstDate = items.length ? String(items[0].date).slice(0,10) : '9999-12-31'
+    return { sailing, firstDate, items }
+  })
+  groupsRaw.sort((a, b) => {
+    const d = a.firstDate.localeCompare(b.firstDate)
+    return d !== 0 ? d : a.sailing.localeCompare(b.sailing)
+  })
+  return groupsRaw
+}
+
+function computeVisibleRowsFromGroups() {
+  groupsTotal.value = groups.value.length
+  const startGrp = (page.value - 1) * perPage.value
+  const endGrp   = startGrp + perPage.value
+  const pageGroups = groups.value.slice(startGrp, endGrp)
+
+  let idx = startGrp
+  const flat = []
+  for (const g of pageGroups) {
+    for (const item of g.items) {
+      flat.push({ ...item, _groupIdx: idx })
+    }
+    idx++
+  }
+  return flat
+}
+
+// ВИДИМЫЕ СТРОКИ
+const visibleRows = computed(() => {
+  // admin: groups строятся в load() из ответа API
+  if (isAdminMode.value) return computeVisibleRowsFromGroups()
+
+  // user: берём rows.value, применяем локальные фильтры и группируем
+  const [from, to] = dateRange.value || []
+  const df = from ? new Date(from).toISOString().slice(0,10) : null
+  const dt = to ? new Date(to).toISOString().slice(0,10) : null
+  const ql = (q.value || '').toLowerCase()
+  const sail = (sailing.value || '').toLowerCase()
+
+  let filtered = (rows.value || []).filter(r => {
+    const matchesSearch =
+      !ql ||
+      String(r.service || '').toLowerCase().includes(ql) ||
+      String(r.sailing || '').toLowerCase().includes(ql)
+    const matchesSailing = !sail || String(r.sailing || '').toLowerCase().includes(sail)
+    const dateStr = String(r.date || '').slice(0,10)
+    const matchesDate = (!df || dateStr >= df) && (!dt || dateStr <= dt)
+    const matchesStatus = !status.value || r._myStatus === status.value
+    return matchesSearch && matchesSailing && matchesDate && matchesStatus
+  })
+
+  if (props.mode === 'mine') {
+    filtered = filtered.filter(r => r._myStatus && r._myStatus !== 'none')
+  }
+
+  groups.value = buildGroups(filtered)
+  return computeVisibleRowsFromGroups()
+})
+
 /** LOAD **/
 async function load () {
   loading.value = true
@@ -239,54 +288,42 @@ async function load () {
       const res = await $fetch('/api/admin/services/list', {
         method: 'GET',
         query: {
-          page: page.value,
-          perPage: perPage.value,
+          all: '1', // тянем все записи под фильтрами — группировку/пагинацию делаем тут
           q: q.value || undefined,
           guide: guide.value || undefined,
           sailing: sailing.value || undefined,
-          statusFilter: status.value || undefined,     // ВАЖНО: статус переименован
+          statusFilter: status.value || undefined,
           dateFrom: from ? new Date(from).toISOString().slice(0,10) : undefined,
           dateTo: to ? new Date(to).toISOString().slice(0,10) : undefined
         }
       })
-      count.value = res.count ?? 0
-      rows.value = (res.items || []).map(r => ({
+      const flat = (res.items || []).map(r => ({
         ...r,
         _selected: r.confirmed?.user_id || null,
         _busy: false
       }))
+      groups.value = buildGroups(flat)
       return
     }
 
-     // USER режимы — локально: стор -> fallback к прямому запросу
+    // USER режимы — стор -> fallback к Supabase, + мои статусы
     const { data: auth } = await supabase.auth.getUser()
     user.value = auth?.user || null
-    
+
     let base = []
     try {
       const fromStore = await dataStore.fetchData?.()
       base = Array.isArray(fromStore) ? fromStore : []
-    } catch (e) {
-      // стор недоступен/упал — пойдём напрямую в БД
-      base = []
-    }
+    } catch { base = [] }
 
-    // если стор ничего не вернул или нет ключевых полей — fallback к Supabase
     if (!base.length || !hasServiceShape(base[0])) {
-      const { data: direct, error: sErr } = await supabase
+      const { data: direct } = await supabase
         .from('services')
         .select('id, sailing, date, service')
         .order('date', { ascending: true })
-      if (sErr) {
-        console.error('[services fallback] ', sErr)
-        base = []
-      } else {
-        base = direct || []
-      }
+      base = direct || []
     }
-    const baseRows = base
 
-    // мои статусы
     let myStatuses = []
     if (user.value) {
       const { data: mine } = await supabase
@@ -297,18 +334,23 @@ async function load () {
     }
     const stMap = Object.fromEntries(myStatuses.map(m => [m.service_id, m.status]))
 
-    rows.value = baseRows.map(s => ({
+    rows.value = base.map(s => ({
       ...s,
       _myStatus: stMap[s.id] || 'none',
       _busy: false
     }))
-    // visibleRows посчитается автоматически (computed)
+    // groups/visibleRows посчитаются computed-ом
   } catch (e) {
     console.error(e)
     ElMessage.error(e.message || 'Failed to load')
   } finally {
     loading.value = false
   }
+}
+
+function hasServiceShape(obj) {
+  if (!obj || typeof obj !== 'object') return false
+  return 'id' in obj && ('service' in obj || 'sailing' in obj || 'date' in obj)
 }
 
 /** пагинация и фильтры */
@@ -426,36 +468,38 @@ async function cancelConfirmed (row) {
   } catch (e) { console.error(e); ElMessage.error(e.message || 'Cancel failed'); await load() }
   finally { row._busy = false }
 }
-
-// проверяем, что объект сервиса имеет нужные поля
-function hasServiceShape(obj) {
-  if (!obj || typeof obj !== 'object') return false
-  // id обязателен для статусов; тексты — любые
-  return 'id' in obj && ('service' in obj || 'sailing' in obj || 'date' in obj)
-
-}
-
-function formatGuide(c) {
-  return c?.display_name || c?.email || c?.user_id || ''
-}
 </script>
 
 <style scoped>
 .card { margin-top: 1rem; padding: 1rem; }
-.filters { display: grid; grid-template-columns: 1fr 1fr 140px 280px 160px 120px; gap: 8px; align-items: center; margin-bottom: 12px; }
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px 280px 160px 120px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .pagination { display: flex; justify-content: center; margin-top: 12px; }
+
 .opt { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+
 .ml-2 { margin-left: 8px; }
 .guide-name { font-weight: 500; }
+
 .guide-cell {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .guide-cell .right {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
+/* Зебра по группам */
+:deep(.el-table .grp-even > td) { background: #e8e8e8; }
+:deep(.el-table .grp-odd  > td) { background: #ffffff; }
 </style>
