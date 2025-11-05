@@ -1,7 +1,6 @@
-export default defineNuxtRouteMiddleware(() => {
-  const { isLoggedIn } = useAuth();
-
-  if (!isLoggedIn()) {
-    return navigateTo("/");
-  }
-});
+export default defineNuxtRouteMiddleware((to) => {
+  const { user } = useAuth()
+  const publicPaths = new Set(['/', '/login'])
+  if (publicPaths.has(to.path)) return
+  if (!user.value) return navigateTo('/login')
+})

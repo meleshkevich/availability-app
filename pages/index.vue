@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container">
-      <div v-if="isLoggedIn()">
+      <div v-if="isLoggedIn">
         <h1>welcome, user!</h1>
       </div>
       <div v-else>
