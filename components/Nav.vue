@@ -11,12 +11,15 @@
       <li v-if="isLoggedIn()">
        <NuxtLink to="/myServices"> My Services </NuxtLink>
       </li>
-      
-      <li v-if="admin">
+       <li v-if="admin">
         <NuxtLink to="/admin"> Admin </NuxtLink>
       </li>
+     
          <li v-if="admin">
         <NuxtLink to="/guides"> Guides </NuxtLink>
+      </li>
+       <li v-if="admin">
+        <NuxtLink to="/adminOld"> AdminOld </NuxtLink>
       </li>
       <li v-if="isLoggedIn()" class="logout" @click="signOut">
         Logout, {{ user.identities[0].identity_data.email }}
@@ -26,7 +29,9 @@
 </template>
 <script setup>
 const { signOut, isLoggedIn, user } = useAuth();
-const admin = ref(false);
+
+//TODO: to clarify admin role!!!!
+const admin = ref(true);
 onMounted(() => {
   setTimeout(() => {
     user.value.id === "6bd6594f-6dd9-403e-8fa5-01c48aed8bf1"
