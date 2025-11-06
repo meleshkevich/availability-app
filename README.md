@@ -1,102 +1,175 @@
-🧭 availability-app
-A web application for managing guides’ service availability and assignments — built with Nuxt 3, Supabase, and Element Plus.
+🧭 Availability App
+
+A web application for managing guides’ service availability, scheduling, and assignments — built with Nuxt 3, Supabase, and Element Plus.
 
 ⚙️ Tech Stack
 
 Frontend: Nuxt 3 (Vue 3 + Composition API)
-
 UI Library: Element Plus
-
 State: Pinia
-
 Backend / Database: Supabase (PostgreSQL + Auth + Realtime)
-
 Auth: Supabase Magic Link / Email
-
 Realtime: Supabase Realtime Channels
-
-PDF Export: jsPDF (placeholder, coming soon)
+PDF Export: pdfmake (embedded Roboto fonts)
 
 🚀 Getting Started
-
 1️⃣ Clone & Install
 git clone <your-repo-url>
 cd availability-app
 npm install
 
-2️⃣ Create .env file in project root
+2️⃣ Environment variables (.env)
 NUXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
-NUXT_PUBLIC_SUPABASE_ANON_KEY=<your-public-anon-key>
+NUXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>  # server-side only
 
-⚠️ Never use the service role key on the frontend.
 
-3️⃣ Run Dev Server
+⚠️ Never expose the service role key on the client.
+
+3️⃣ Run Dev
 npm run dev
 
 
 App runs at http://localhost:3000
 
-🧩 Database Schema (Phase 1)
-
+🧩 Database Schema
 Tables
+Table	Purpose
+service_types	Reference table for all possible service names (enum-like).
+services	List of scheduled services (sailing, date, service_type_id).
+service_guides	Availability & assignment mapping (service_id, user_id, status).
+user_meta	Editable guide info (display_name, phone).
+Status values
 
-services — list of all available services (sailing, date, service)
-
-service_guides — link between service_id and user_id with status
-(tentative, confirmed, cxl_requested, cxl)
+tentative → selected
+confirmed → assigned by admin
+cxl_requested → guide asked to cancel
+cxl → cancel approved
 
 Security
 
-Row-Level Security (RLS) policies restrict each user to their own records
+Row-Level Security (RLS) limits data per user.
 
-Admins use service-role key via Edge Functions (Phase 2)
+Admins operate via service-role key through server API.
 
-🧠 Current Features (Phase 1)
+Triggers & policies enforce valid status transitions.
 
-🔐 Authentication — secure login with Supabase Auth (magic link / email)
+🧠 Core Features
+🔐 Authentication
 
-📋 Services Listing — full list of available services with info
+Supabase Auth (email / magic link).
+Reactive session stored in Nuxt state.
+
+📋 Services Listing
+
+Single <ServiceTable> component used for:
+
+All services (mode="all")
+
+My services (mode="mine")
+
+Admin panel (mode="admin")
 
 🙋‍♂️ Guide Actions
 
-Select a service → creates tentative record
+Select → creates tentative.
 
-Unselect → deletes the record
+Unselect → deletes tentative.
 
-Request Cancellation → changes status from confirmed → cxl_requested
+Request CXL → updates confirmed → cxl_requested.
 
-🧾 My Services Page — shows only user’s selected services and statuses
+PDF Export → available in “My Services”.
 
-🔄 Realtime Updates — instant sync when admin changes service statuses
+🧾 My Services Page
 
-🛡️ RLS Policies — PostgreSQL security ensures user isolation
+Displays only the user’s selections.
 
-🧱 Reusable UI — single <ServiceTable> component used in both pages
+Filters (date, status, search).
 
-🧩 Ready for Phase 2
+Grouped by Sailing with zebra background.
 
-Admin confirmation of guides
+Export to PDF via pdfmake (one-click download).
 
-Approving cancellations
+🔄 Realtime Updates
 
-Advanced reporting & PDF export
+Supabase Realtime channels push status changes instantly to clients.
 
-🧭 Next Steps (Phase 2 Roadmap)
+🧑‍💼 Admin Panel
 
-🧑‍💼 Admin panel to assign & confirm guides
+Full table view with filters (sailing/date/status/search).
 
-📨 Notifications for confirmation/cancellation
+Assign guide (Confirm).
 
-🗂 Advanced filtering, search, and export
+Approve CXL for requested cancellations.
 
-🧾 Full PDF and CSV exports for office reports
+Cancel Confirmed (returns to open).
+
+Add Service form in accordion.
+
+Manage Service Types (create new types on the fly).
+
+Grouping by Sailing with non-breaking pagination.
+
+🧱 Reusable UI
+
+Unified ServiceTable with three modes and shared filters/pagination.
+
+🧮 PDF Export (pdfmake)
+
+Generates lightweight A4 PDF (Roboto font).
+
+Columns: Date, Sailing, Service, Status.
+
+Exports all filtered records, not just current page.
+
+Works offline in browser, no server calls.
+
+🔧 Admin Extras
+
+AdminAddService accordion form for creating new services.
+
+Automatic creation of new service types (adds row to service_types).
+
+Validation & instant refresh after insert.
+
+📦 Current Architecture
+
+plugins/00.supabase.client.ts — single Supabase client.
+
+plugins/01.auth-init.client.ts — global auth session.
+
+composables/useAuth.ts — signIn/signUp/signOut.
+
+composables/useSupabase.ts — Nuxt-provided client.
+
+components/ServiceTable.vue — main table logic.
+
+components/AdminAddService.vue — admin form.
+
+server/api/admin/** — secure server routes using SUPABASE_SERVICE_ROLE_KEY.
+
+🧭 Next Steps
+
+📊 Sticky table headers and scrollable body.
+
+📧 Email / Slack notifications for assignments.
+
+📈 Reports & CSV export.
+
+🌗 Dark/light theme toggle.
+
+🧩 Role-based multi-tenant access.
 
 🧑‍💻 Development Notes
 
-All Supabase queries use useSupabase() composable (NUXT_PUBLIC_SUPABASE_* envs).
+All Supabase calls use useSupabase() composable.
 
-All user-level writes go through RLS policies.
+User writes guarded by RLS.
 
-Admin-level actions will go through Edge Functions using the service role key.
+Admin writes go through server API (service-role).
 
-Real-time updates handled via supabase.channel('...').on('postgres_changes').
+Realtime handled via .channel('…').on('postgres_changes').
+
+Groups in tables are built client-side (sorted by earliest date).
+
+Element Plus provides layout and form controls.

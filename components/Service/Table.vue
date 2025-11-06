@@ -20,6 +20,9 @@
         <el-option label="CXL" value="cxl" />
       </el-select>
       <el-button @click="load" :loading="loading">Refresh</el-button>
+      <el-button v-if="!isAdminMode && props.mode==='mine'" type="primary" @click="exportPdfMine">
+      Export PDF
+    </el-button>
     </div>
   </el-card>
   <el-card class="card"> 
@@ -474,6 +477,101 @@ async function cancelConfirmed (row) {
   } catch (e) { console.error(e); ElMessage.error(e.message || 'Cancel failed'); await load() }
   finally { row._busy = false }
 }
+
+// Export PDF 
+// доступ к pdfMake из плагина
+const { $pdfMake } = useNuxtApp()
+
+// такой же маппер статусов, как в My Services:
+const pdfStatusLabel = (s) => ({
+  tentative: 'Selected',
+  confirmed: 'Confirmed',
+  cxl_requested: 'CXL Requested',
+  cxl: 'Cancelled',
+  none: 'Not Selected'
+}[s] || (s || ''))
+
+// получить плоский список ВСЕХ отфильтрованных строк (не только текущая страница)
+function getAllFilteredUserRows () {
+  // логика фильтров идентична visibleRows (user-ветка), но без пагинации по группам
+  const [from, to] = dateRange.value || []
+  const df = from ? new Date(from).toISOString().slice(0,10) : null
+  const dt = to ? new Date(to).toISOString().slice(0,10) : null
+  const ql = (q.value || '').toLowerCase()
+  const sail = (sailing.value || '').toLowerCase()
+
+  let filtered = (rows.value || []).filter(r => {
+    const matchesSearch =
+      !ql ||
+      String(r.service || '').toLowerCase().includes(ql) ||
+      String(r.sailing || '').toLowerCase().includes(ql)
+    const matchesSailing = !sail || String(r.sailing || '').toLowerCase().includes(sail)
+    const dateStr = String(r.date || '').slice(0,10)
+    const matchesDate = (!df || dateStr >= df) && (!dt || dateStr <= dt)
+    const matchesStatus = !status.value || r._myStatus === status.value
+    return matchesSearch && matchesSailing && matchesDate && matchesStatus
+  })
+
+  // только мои
+  if (props.mode === 'mine') {
+    filtered = filtered.filter(r => r._myStatus && r._myStatus !== 'none')
+  }
+
+  // вернуть в порядке группировки (сначала отсортируем группами)
+  const gs = buildGroups(filtered) // уже есть в файле
+  const flat = []
+  let idx = 0
+  for (const g of gs) {
+    for (const item of g.items) flat.push({ ...item, _groupIdx: idx })
+    idx++
+  }
+  return flat
+}
+
+function exportPdfMine () {
+  const data = getAllFilteredUserRows()
+  if (!data.length) {
+    ElMessage.info('No services to export')
+    return
+  }
+
+  // Заголовки
+  const header = [
+    { text: 'Date', bold: true },
+    { text: 'Sailing', bold: true },
+    { text: 'Service', bold: true },
+    { text: 'Status', bold: true }
+  ]
+
+  // Тело таблицы
+  const body = [
+    header,
+    ...data.map(r => ([
+      String(r.date || '').slice(0,10),
+      r.sailing || '',
+      r.services?.title || r.service || '',
+      pdfStatusLabel(r._myStatus || 'none')
+    ]))
+  ]
+
+  const dd = {
+    pageSize: 'A4',
+    pageMargins: [24, 24, 24, 24],
+    defaultStyle: { font: 'Roboto', fontSize: 10 }, // только латиница
+    styles: { h1: { fontSize: 16, bold: true, margin: [0, 0, 0, 8] } },
+    content: [
+      { text: 'My Services — Export', style: 'h1' },
+      {
+        table: { headerRows: 1, widths: ['auto','auto','*','auto'], body },
+        layout: 'lightHorizontalLines'
+      }
+    ]
+  }
+
+  const filename = `my-services-${new Date().toISOString().slice(0,10)}.pdf`
+  $pdfMake.createPdf(dd).download(filename)
+}
+
 </script>
 
 <style scoped>
