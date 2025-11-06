@@ -4,28 +4,36 @@
       <!-- Лого или название -->
       <NuxtLink to="/" class="nav-logo">Availability App</NuxtLink>
 
-      <!-- Основное меню -->
-      <ul class="nav-menu">
-        <li>
-          <NuxtLink to="/services" class="nav-link" active-class="active">Services</NuxtLink>
-        </li>
-        <li>
-          <NuxtLink to="/myServices" class="nav-link" active-class="active">My Services</NuxtLink>
-        </li>
-         <li v-if="isLoggedIn && admin">
-          <NuxtLink to="/guides" class="nav-link" active-class="active">Guides</NuxtLink>
-        </li>
-        <li v-if="isLoggedIn && admin">
-          <NuxtLink to="/admin" class="nav-link" active-class="active">Admin</NuxtLink>
-        </li>
-        <li v-if="isLoggedIn" class="nav-user">
-          <span class="user-email">{{ user?.email }}</span>
-          <el-button link type="danger" @click="signOut">Logout</el-button>
-        </li>
-        <li v-else>
-          <NuxtLink to="/login" class="nav-link login">Login</NuxtLink>
-        </li>
-      </ul>
+   <ul class="nav-menu">
+   <!-- admin-visible -->
+  <template v-if="isLoggedIn && admin">
+    <li>
+      <NuxtLink to="/admin" class="nav-link" active-class="active">Services</NuxtLink>
+    </li>
+    <li>
+      <NuxtLink to="/guides" class="nav-link" active-class="active">Guides</NuxtLink>
+    </li>
+  </template>
+
+  <!-- user-visible -->
+  <template v-else>
+    <li>
+      <NuxtLink to="/services" class="nav-link" active-class="active">Services</NuxtLink>
+    </li>
+    <li>
+      <NuxtLink to="/myServices" class="nav-link" active-class="active">My Services</NuxtLink>
+    </li>
+  </template>
+
+  <!-- user info / login -->
+  <li v-if="isLoggedIn" class="nav-user">
+    <span class="user-email">{{ user?.email }}</span>
+    <el-button link type="danger" @click="signOut">Logout</el-button>
+  </li>
+  <li v-else>
+    <NuxtLink to="/login" class="nav-link login">Login</NuxtLink>
+  </li>
+</ul>
     </div>
   </nav>
 </template>
@@ -41,7 +49,7 @@ watchEffect(() => checkAdmin())
 
 function checkAdmin() {
   // 🔧 замени ID на реальный или используй флаг из user_metadata
-  admin.value = user?.value?.id === '9ab65b6c-f155-4364-8276-d4be1815fa2c'
+  admin.value = user?.value?.id === '16dfdc03-dd0b-41d5-801f-d2c6a91efb0c'
 }
 </script>
 

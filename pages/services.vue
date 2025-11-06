@@ -12,7 +12,7 @@ definePageMeta({ middleware: 'auth' })
 </script>
 
 <style scoped>
-.container { max-width: 90%; margin: 0 auto; padding: 3rem 0;  }
+.container { max-width: 100%; margin: 0 auto; padding: 3rem 0;  }
 h3 { font-size: 2rem; }
 .card-container { margin-top: 1rem; }
 </style>

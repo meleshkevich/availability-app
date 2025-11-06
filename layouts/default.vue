@@ -9,7 +9,7 @@
     </main>
 
     <!-- (опционально) футер -->
-    <!-- <footer class="footer">© {{ new Date().getFullYear() }} — Availability App</footer> -->
+    <footer class="footer">© {{ new Date().getFullYear() }} — Availability App</footer>
   </div>
 </template>
 
@@ -33,12 +33,12 @@
 }
 
 /* необязательный футер */
-/* .footer {
+.footer {
   border-top: 1px solid #eee;
   padding: 12px 16px;
   text-align: center;
   color: #666;
   font-size: 14px;
-} */
+}
 
 </style>

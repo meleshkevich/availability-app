@@ -299,11 +299,15 @@ async function load () {
           dateTo: to ? new Date(to).toISOString().slice(0,10) : undefined
         }
       })
-      const flat = (res.items || []).map(r => ({
-        ...r,
-        _selected: r.confirmed?.user_id || null,
-        _busy: false
-      }))
+     const flat = (res.items || []).map(r => {
+     const cxlReq = (r.candidates || []).find(c => c.status === 'cxl_requested')
+     const preselect = cxlReq?.user_id ?? r.confirmed?.user_id ?? null
+     return {
+       ...r,
+       _selected: preselect,
+       _busy: false
+     }
+   })
       groups.value = buildGroups(flat)
       return
     }

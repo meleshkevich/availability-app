@@ -130,7 +130,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.container { max-width: 1100px; margin: 0 auto; padding: 24px 0; }
+.container { max-width: 100%; margin: 0 auto; padding: 24px 0; }
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .actions { display: flex; gap: 8px; }
 .pagination { display: flex; justify-content: center; margin-top: 12px; }
