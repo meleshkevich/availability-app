@@ -9,7 +9,7 @@
     </main>
 
     <!-- (опционально) футер -->
-    <footer class="footer">© {{ new Date().getFullYear() }} — Availability App</footer>
+    <footer class="footer">© {{ new Date().getFullYear() }} — Availability App -</footer>
   </div>
 </template>
 

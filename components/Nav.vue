@@ -27,11 +27,11 @@
 
   <!-- user info / login -->
   <li v-if="isLoggedIn" class="nav-user">
-    <span class="user-email">{{ user?.email }}</span>
-    <el-button link type="danger" @click="signOut">Logout</el-button>
+    <span class="user-email">{{ displayName }}</span>
+    <el-button link type="danger" @click="signOut">|| Logout</el-button>
   </li>
   <li v-else>
-    <NuxtLink to="/login" class="nav-link login">Login</NuxtLink>
+    <NuxtLink to="/" class="nav-link login">|| Login</NuxtLink>
   </li>
 </ul>
     </div>
@@ -40,7 +40,7 @@
 
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue'
-const { signOut, isLoggedIn, user } = useAuth()
+const { signOut, isLoggedIn, user, displayName } = useAuth()
 
 const admin = ref(false)
 
