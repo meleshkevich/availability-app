@@ -1,24 +1,27 @@
 <template>
   <el-card class="card">
     <!-- Фильтры и кнопка Refresh — во всех режимах -->
-    <div class="filters">
+    <div class="filters" :class="isAdminMode ? 'filters--admin' : 'filters--user'">
       <el-input v-model="q" placeholder="Search service/sailing…" clearable @input="debouncedLoad" />
       <el-input v-if="isAdminMode"  v-model="guide" placeholder="Guide name/email…" clearable @input="debouncedLoad" />
       <el-input v-model="sailing" placeholder="Sailing" clearable @input="debouncedLoad" />
       <el-date-picker
+       class="filter-date"
         v-model="dateRange"
         type="daterange"
+        value-format="YYYY-MM-DD"
         range-separator="to"
         start-placeholder="From"
         end-placeholder="To"
         @change="onFilterChange"
       />
-      <el-select v-model="status" placeholder="Status" clearable @change="onFilterChange" style="min-width:160px">
+      <el-select  class="filter-status" v-model="status" placeholder="Status" clearable @change="onFilterChange" style="min-width:160px">
         <el-option label="Tentative" value="tentative" />
         <el-option label="Confirmed" value="confirmed" />
         <el-option label="CXL Requested" value="cxl_requested" />
         <el-option label="CXL" value="cxl" />
       </el-select>
+      <div class="filters__spacer"></div>
       <el-button @click="load" :loading="loading">Refresh</el-button>
       <el-button v-if="!isAdminMode && props.mode==='mine'" type="primary" @click="exportPdfMine">
       Export PDF
@@ -258,8 +261,8 @@ const visibleRows = computed(() => {
 
   // user: берём rows.value, применяем локальные фильтры и группируем
   const [from, to] = dateRange.value || []
-  const df = from ? new Date(from).toISOString().slice(0,10) : null
-  const dt = to ? new Date(to).toISOString().slice(0,10) : null
+  const df = toYMD(from) || null
+  const dt = toYMD(to)   || null
   const ql = (q.value || '').toLowerCase()
   const sail = (sailing.value || '').toLowerCase()
 
@@ -297,8 +300,8 @@ async function load () {
           guide: guide.value || undefined,
           sailing: sailing.value || undefined,
           statusFilter: status.value || undefined,
-          dateFrom: from ? new Date(from).toISOString().slice(0,10) : undefined,
-          dateTo: to ? new Date(to).toISOString().slice(0,10) : undefined
+          dateFrom: toYMD(from),
+          dateTo: toYMD(to)
         }
       })
      const flat = (res.items || []).map(r => {
@@ -494,8 +497,8 @@ const pdfStatusLabel = (s) => ({
 function getAllFilteredUserRows () {
   // логика фильтров идентична visibleRows (user-ветка), но без пагинации по группам
   const [from, to] = dateRange.value || []
-  const df = from ? new Date(from).toISOString().slice(0,10) : null
-  const dt = to ? new Date(to).toISOString().slice(0,10) : null
+  const df = toYMD(from) || null
+  const dt = toYMD(to)   || null
   const ql = (q.value || '').toLowerCase()
   const sail = (sailing.value || '').toLowerCase()
 
@@ -567,10 +570,23 @@ function exportPdfMine () {
     ]
   }
 
-  const filename = `my-services-${new Date().toISOString().slice(0,10)}.pdf`
+  const filename = `my-services-${new Date().slice(0,10)}.pdf`
   $pdfMake.createPdf(dd).download(filename)
 }
 
+function toYMD(d) {
+  if (!d) return undefined
+  if (typeof d === 'string') return d // уже "YYYY-MM-DD"
+  // dayjs? -> toDate()
+  if (typeof d?.toDate === 'function') d = d.toDate()
+  if (d instanceof Date && !isNaN(d.getTime())) {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  return undefined
+}
 </script>
 
 <style scoped>
@@ -578,10 +594,33 @@ function exportPdfMine () {
 
 .filters {
   display: grid;
-  grid-template-columns: 1fr 1fr 140px 280px 160px 120px;
   gap: 8px;
   align-items: center;
   margin-bottom: 12px;
+}
+.filter-date { width: 260px; }   
+:deep(.filter-date.el-date-editor),
+:deep(.filter-status .el-select) { width: 100%; }
+.filter-status { width: 140px;  margin-left: 20px; }  
+.filters__spacer { width: 100%; }
+/* ADMIN: q | guide | sailing | date | status | spacer | buttons... */
+.filters--admin {
+  grid-template-columns: 1fr 1fr 180px 260px 140px 1fr auto auto;
+}
+
+/* USER: q | sailing | date | status | spacer | buttons... */
+.filters--user {
+  grid-template-columns: 1fr 180px 260px 140px 1fr auto auto;
+}
+
+/* на узких экранах разрешим перенос */
+@media (max-width: 900px) {
+  .filters--admin,
+  .filters--user {
+    grid-template-columns: 1fr 1fr;
+  }
+  .filter-date, .filter-status { width: 100%; }
+  .filters__spacer { display: none; }
 }
 
 .pagination { display: flex; justify-content: center; margin-top: 12px; }
