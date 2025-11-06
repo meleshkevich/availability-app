@@ -2,9 +2,18 @@
   // https://v3.nuxtjs.org/concepts/typescript
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "types": ["@types/node"],
+    "types": ["@types/node", "nuxt"],
+     "moduleResolution": "node",
+    "strict": true,
     "paths": {},
     "baseUrl": "."
   },
-  "include": ["types/**/*.d.ts", "plugins/**/*.ts", "composables/**/*.ts", "components/**/*.vue", "pages/**/*.vue", "app.vue"]
+  "include": [
+    "nuxt.config.ts",
+    "server/**/*.ts",
+    "composables/**/*.ts",
+    "plugins/**/*.ts",
+    "components/**/*.vue",
+    "pages/**/*.vue"
+  ]
 }

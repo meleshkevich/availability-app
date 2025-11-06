@@ -1,15 +1,41 @@
-import { createClient } from '@supabase/supabase-js'
+import { eventHandler, readBody, createError, sendError, type H3Event } from 'h3'
+import { createClient, type PostgrestError } from '@supabase/supabase-js'
 
-export default defineEventHandler(async (event) => {
-  const { service_id, user_id } = await readBody(event)
+type Body = { service_id: string; user_id: string }
+
+export default eventHandler(async (event: H3Event) => {
+  const supabaseUrl = process.env.NUXT_PUBLIC_SUPABASE_URL as string
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string
+  if (!supabaseUrl || !serviceKey) {
+    throw createError({ statusCode: 500, statusMessage: 'Missing Supabase env' })
+  }
+  const admin = createClient(supabaseUrl, serviceKey)
+
+  let body: Body
+  try {
+    body = await readBody<Body>(event)
+  } catch {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid JSON body' })
+  }
+  const { service_id, user_id } = body || ({} as Body)
   if (!service_id || !user_id) {
     throw createError({ statusCode: 400, statusMessage: 'service_id and user_id are required' })
   }
-  const cfg = useRuntimeConfig()
-  const admin = createClient(cfg.public.supabaseUrl, cfg.supabaseServiceRoleKey)
 
-  const { error } = await admin.rpc('admin_force_cxl', { p_service: service_id, p_user: user_id })
-  if (error) throw createError({ statusCode: 500, statusMessage: error.message })
+  const { data, error } = await admin
+    .from('service_guides')
+    .update({ status: 'cxl' })
+    .eq('service_id', service_id)
+    .eq('user_id', user_id)
+    .eq('status', 'confirmed')
+    .select('service_id, user_id, status')
+    .maybeSingle()
 
-  return { ok: true }
+  if (error) {
+    return sendError(event, createError({ statusCode: 500, statusMessage: (error as PostgrestError).message }))
+  }
+  if (!data) {
+    throw createError({ statusCode: 409, statusMessage: 'Invalid status transition or already processed' })
+  }
+  return { ok: true, item: data }
 })
