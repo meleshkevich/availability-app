@@ -169,12 +169,11 @@ const statusLabel = (s) => ({
 }[s || 'none'])
 
 const statusType = (s) => ({
-  none: '',
   tentative: 'info',
   confirmed: 'success',
   cxl_requested: 'warning',
   cxl: 'danger'
-}[s || 'none'])
+})[s] // вернёт undefined если статуса нет
 
 // формат в селекте
 function formatGuide(c) {
