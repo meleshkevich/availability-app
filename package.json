@@ -12,6 +12,7 @@
     "@pinia/nuxt": "0.4.11",
     "@supabase/supabase-js": "^2.45.0",
     "element-plus": "^2.8.7",
+    "exceljs": "^4.4.0",
     "nuxt": "^3.13.2",
     "pdfmake": "^0.2.20",
     "pinia": "^2.2.5"

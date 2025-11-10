@@ -16,54 +16,62 @@
     <!-- Тело: сворачиваем/разворачиваем -->
     <transition name="fade-slide">
       <div v-show="expanded" class="body">
-        <el-form :model="form" label-width="120px" @submit.prevent="createService">
-          <el-form-item label="Sailing">
-            <el-input v-model="form.sailing" placeholder="e.g. MSC-1234" />
-          </el-form-item>
+        <el-tabs v-model="activeTab">
+          <el-tab-pane label="Add Service" name="single">
+            <el-form :model="form" label-width="120px" @submit.prevent="createService">
+              <el-form-item label="Sailing">
+                <el-input v-model="form.sailing" placeholder="e.g. MSC-1234" />
+              </el-form-item>
 
-          <el-form-item label="Date">
-            <el-date-picker
-              v-model="form.date"
-              type="date"
-              placeholder="Pick a date"
-              format="YYYY-MM-DD"
-              value-format="YYYY-MM-DD"
-            />
-          </el-form-item>
-
-          <el-form-item label="Service type">
-            <div class="row">
-              <el-select
-                v-model="form.service_type_id"
-                filterable
-                remote
-                reserve-keyword
-                :remote-method="fetchTypes"
-                :loading="loadingTypes"
-                placeholder="Select service type"
-                style="min-width:260px"
-                @visible-change="(v)=>{ if(v) fetchTypes('') }"
-                clearable
-              >
-                <el-option
-                  v-for="t in types"
-                  :key="t.id"
-                  :label="t.name"
-                  :value="t.id"
+              <el-form-item label="Date">
+                <el-date-picker
+                  v-model="form.date"
+                  type="date"
+                  placeholder="Pick a date"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
                 />
-              </el-select>
+              </el-form-item>
 
-              <el-button type="primary" link @click="showNewType=true">
-                + New type
-              </el-button>
-            </div>
-          </el-form-item>
+              <el-form-item label="Service type">
+                <div class="row">
+                  <el-select
+                    v-model="form.service_type_id"
+                    filterable
+                    remote
+                    reserve-keyword
+                    :remote-method="fetchTypes"
+                    :loading="loadingTypes"
+                    placeholder="Select service type"
+                    style="min-width:260px"
+                    @visible-change="(v) => { if(v) fetchTypes('') }"
+                    clearable
+                  >
+                    <el-option
+                      v-for="t in types"
+                      :key="t.id"
+                      :label="t.name"
+                      :value="t.id"
+                    />
+                  </el-select>
 
-          <el-form-item>
-            <el-button type="primary" :loading="submitting" @click="createService">Create</el-button>
-            <el-button @click="reset">Reset</el-button>
-          </el-form-item>
-        </el-form>
+                  <el-button type="primary" link @click="showNewType=true">
+                    + New type
+                  </el-button>
+                </div>
+              </el-form-item>
+
+              <el-form-item>
+                <el-button type="primary" :loading="submitting" @click="createService">Create</el-button>
+                <el-button @click="reset">Reset</el-button>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="Add Services" name="multiple">
+            <UploadExcel />
+          </el-tab-pane>
+        </el-tabs>
       </div>
     </transition>
 
@@ -82,10 +90,12 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
+import UploadExcel from '~/components/UploadExcel.vue'
 
-/** свернуто по умолчанию */
 const expanded = ref(false)
 const toggle = () => (expanded.value = !expanded.value)
+
+const activeTab = ref('single')
 
 const form = ref({
   sailing: '',
@@ -166,7 +176,6 @@ async function createService () {
 <style scoped>
 .add-card { margin-bottom: 12px; }
 
-/* шапка-аккордеон */
 .card-header {
   display: flex;
   align-items: center;
@@ -191,11 +200,9 @@ async function createService () {
   transform: rotate(180deg);
 }
 
-/* тело */
 .body { padding-top: 8px; }
 .row { display:flex; align-items:center; gap:8px; }
 
-/* анимация */
 .fade-slide-enter-active,
 .fade-slide-leave-active { transition: all .18s ease; }
 .fade-slide-enter-from,

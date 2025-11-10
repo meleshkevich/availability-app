@@ -2,6 +2,8 @@
 
 A web application for managing guides’ service availability, scheduling, and assignments — built with Nuxt 3, Supabase, and Element Plus.
 
+deployed with Vercel: https://availability-app-eight.vercel.app/ 
+
 ⚙️ Tech Stack
 
 Frontend: Nuxt 3 (Vue 3 + Composition API)
