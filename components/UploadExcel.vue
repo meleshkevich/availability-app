@@ -57,13 +57,13 @@ const onFileChange = async (file) => {
     const arrayBuffer = e.target.result;
     await workbook.xlsx.load(arrayBuffer);
     const worksheet = workbook.getWorksheet(1);
-    const expectedHeaders = ['Date', 'Sailing', 'Service'];
+    const expectedHeaders = ['date', 'sailing', 'service'];
 
     // Проверка заголовков
     const headerRow = worksheet.getRow(1);
     const headers = headerRow.values.slice(1);
 
-    if (!expectedHeaders.every((header, i) => header === headers[i])) {
+    if (!expectedHeaders.every((header, i) => header.toLowerCase() === headers[i])) {
       incompatibleDialogVisible.value = true;
       return;
     }
@@ -82,8 +82,8 @@ const onFileChange = async (file) => {
 
       const serviceTypeId = serviceTypeMap.get(serviceName);
       if (!serviceTypeId) {
-        console.warn(`Не найден service_type_id для сервиса: ${serviceName}`);
-        ElMessage.warning(`Не найден type_id для сервиса: ${serviceName}`);
+        console.warn(`service_type_id not found for service: ${serviceName}`);
+        ElMessage.warning(`type_id not found for service: ${serviceName}`);
         return;
       }
 
@@ -99,7 +99,7 @@ const onFileChange = async (file) => {
     if (records.value.length > 0) {
       readyToUploadDialogVisible.value = true;
     } else {
-      ElMessage.info('Нет данных для загрузки');
+      ElMessage.info('No data to upload');
     }
   };
 
@@ -113,11 +113,11 @@ const uploadRecords = async () => {
       .insert(records.value);
 
     if (error) {
-      console.error('Ошибка при вставке данных:', error.message);
-      ElMessage.error('Не удалось загрузить данные');
+      console.error('Error inserting data:', error.message);
+      ElMessage.error('Failed to upload data');
     } else {
-      console.log('Данные успешно загружены:', data);
-      ElMessage.success('Данные успешно загружены');
+      console.log('Data uploaded successfully:', data);
+      ElMessage.success('Data uploaded successfully');
     }
   }
   readyToUploadDialogVisible.value = false;
