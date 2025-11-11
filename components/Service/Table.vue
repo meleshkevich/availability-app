@@ -133,9 +133,10 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
-import {statusLabel, statusType} from '../../utils/status'
+import {statusLabel, statusType} from '~/utils/status'
 import useSupabase from '~/composables/useSupabase'
 import { useDataStore } from '~/stores/data'
+import { todayYMD, toYMD } from '~/utils/dateFunctions'
 
 const props = defineProps({
   mode: { type: String, default: 'all' } // all | mine | admin
@@ -558,27 +559,6 @@ function exportPdfMine () {
  const filename = `my-services-${todayYMD()}.pdf`
   $pdfMake.createPdf(dd).download(filename)
 }
-function todayYMD () {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-function toYMD(d) {
-  if (!d) return undefined
-  if (typeof d === 'string') return d // уже "YYYY-MM-DD"
-  // dayjs? -> toDate()
-  if (typeof d?.toDate === 'function') d = d.toDate()
-  if (d instanceof Date && !isNaN(d.getTime())) {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }
-  return undefined
-}
-
 
 </script>
 
