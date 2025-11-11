@@ -133,6 +133,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
+import {statusLabel, statusType} from '../../utils/status'
 import useSupabase from '~/composables/useSupabase'
 import { useDataStore } from '~/stores/data'
 
@@ -161,22 +162,6 @@ const groups = ref([])          // [{ sailing, firstDate, items: [] }]
 const groupsTotal = ref(0)
 const loading = ref(false)
 let channel = null
-
-// словари статусов
-const statusLabel = (s) => ({
-  none: 'Not Selected',
-  tentative: 'Tentative',
-  confirmed: 'Confirmed',
-  cxl_requested: 'CXL Requested',
-  cxl: 'Cancelled'
-}[s || 'none'])
-
-const statusType = (s) => ({
-  tentative: 'info',
-  confirmed: 'success',
-  cxl_requested: 'warning',
-  cxl: 'danger'
-})[s] // вернёт undefined если статуса нет
 
 // формат в селекте
 function formatGuide(c) {
