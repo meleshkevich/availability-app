@@ -1,11 +1,20 @@
 module.exports = {
-  models: [{
+  models: [
+    {
     name: "openai-gpt4o",
     title: "OpenAI GPT-4o",
     provider: "openai",
     model: "gpt-4o",
     apiKey: process.env.OPENAI_API_KEY 
-  }],
+  },
+  {
+  name: "openai-gpt5",
+  title: "OpenAI GPT-5",
+  provider: "openai",
+  model: "gpt-5",
+  apiKey: process.env.OPENAI_API_KEY
+}
+],
   defaultModel: "openai-gpt4o",
   contextProviders: [
     {

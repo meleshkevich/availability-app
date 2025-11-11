@@ -90,6 +90,24 @@ const itemsAll = services.map(s => {
   return { ...s, service: serviceName, candidates: cands, confirmed }
 })
 
+// 🔧 фильтруем по статусу, если он передан
+let itemsFiltered = itemsAll
+if (status) {
+  itemsFiltered = itemsAll.filter(it => (it.candidates || []).some(c => c.status === status))
+}
+
+// учитываем wantAll (возврат без пагинации)
+if (wantAll) {
+  return {
+    page,
+    perPage,
+    count: itemsFiltered.length,
+    items: itemsFiltered
+  }
+}
+
+ 
+
   // 6️⃣ Если нужен весь набор (all=1) — возвращаем всё без пагинации
   if (wantAll) {
     return {
