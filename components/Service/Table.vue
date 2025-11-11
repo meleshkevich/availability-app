@@ -650,6 +650,6 @@ function toYMD(d) {
 }
 
 /* Зебра по группам */
-:deep(.el-table .grp-even > td) { background: #e8e8e8; }
+:deep(.el-table .grp-even > td) { background: #F3F8FB; }
 :deep(.el-table .grp-odd  > td) { background: #ffffff; }
 </style>
