@@ -152,7 +152,7 @@ const sailing = ref('')
 const status = ref('')
 const dateRange = ref([])
 const page = ref(1)
-const perPage = ref(20)
+const perPage = ref(3) // groups per page
 
 // данные и состояния
 const user = ref(null)
@@ -650,6 +650,6 @@ function toYMD(d) {
 }
 
 /* Зебра по группам */
-:deep(.el-table .grp-even > td) { background: #e8e8e8; }
+:deep(.el-table .grp-even > td) { background: #F3F8FB; }
 :deep(.el-table .grp-odd  > td) { background: #ffffff; }
 </style>
