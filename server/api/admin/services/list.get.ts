@@ -63,6 +63,27 @@ let svcQuery = admin.from('services')
     }
   }
 
+   // 3.1️⃣ Все гиды (для дропдауна), не только кандидаты
+  // ⚠️ при необходимости подправь фильтр под вашу модель:
+  //    .eq('role', 'guide') ИЛИ вовсе убери .eq(...) если все пользователи — гиды
+  const { data: allGuidesRaw, error: eAll } = await admin
+    .from('user_meta')
+    .select('user_id, display_name')
+  if (eAll) throw createError({ statusCode: 500, statusMessage: eAll.message })
+
+  // дотянем email и для всех гидов
+  const allGuideIds = Array.from(new Set((allGuidesRaw || []).map(g => g.user_id)))
+  const emailsAll: Record<string, string | null> = {}
+  for (const uid of allGuideIds) {
+    if (uid in emailById) { emailsAll[uid] = emailById[uid]; continue }
+    try {
+      const { data } = await admin.auth.admin.getUserById(uid)
+      emailsAll[uid] = data?.user?.email ?? null
+    } catch {
+      emailsAll[uid] = null
+    }
+  }
+
   // 4️⃣ фильтр по имени/email гида
   const filteredCands = (candidates || []).filter(c => {
     if (!guideQ) return true
@@ -83,11 +104,31 @@ let svcQuery = admin.from('services')
     })
   }
 
+// const itemsAll = services.map(s => {
+//   const cands = bySvc[s.id] || []
+//   const confirmed = cands.find(c => c.status === 'confirmed') || null
+//   const serviceName = (s as any).service_types?.name ?? (s as any).service ?? null
+//   return { ...s, service: serviceName, candidates: cands, confirmed }
+// })
+
 const itemsAll = services.map(s => {
   const cands = bySvc[s.id] || []
   const confirmed = cands.find(c => c.status === 'confirmed') || null
   const serviceName = (s as any).service_types?.name ?? (s as any).service ?? null
-  return { ...s, service: serviceName, candidates: cands, confirmed }
+
+  // карта статусов по user_id для этого сервиса
+  const statusMap: Record<string, string|null> = {}
+  for (const c of cands) statusMap[c.user_id] = c.status
+
+  // полный список гидов для дропдауна
+  const all_guides = (allGuidesRaw || []).map(g => ({
+    user_id: g.user_id,
+    display_name: g.display_name ?? null,
+    email: (emailsAll[g.user_id] ?? emailById[g.user_id]) ?? null,
+    status: statusMap[g.user_id] ?? null
+  }))
+
+  return { ...s, service: serviceName, candidates: cands, confirmed, all_guides }
 })
 
 // 🔧 фильтруем по статусу, если он передан

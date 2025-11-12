@@ -62,14 +62,14 @@
           <template v-else>
             <el-select v-model="row._selected" placeholder="Select guide" filterable clearable style="width:100%">
               <el-option
-                v-for="c in (row.candidates || [])"
+                v-for="c in sortedGuides(row)"
                 :key="c.user_id"
                 :label="formatGuide(c)"
                 :value="c.user_id"
               >
                 <div class="opt">
                   <span>{{ c.display_name || c.email || c.user_id }}</span>
-                  <el-tag size="small" :type="statusType(c.status)">{{ statusLabel(c.status) }}</el-tag>
+                  <el-tag v-if="c.status" size="small" :type="statusType(c.status)">{{ statusLabel(c.status) }}</el-tag>
                 </div>
               </el-option>
             </el-select>
@@ -171,6 +171,20 @@ function formatGuide(c) {
   return c?.display_name || c?.email || c?.user_id || ''
 }
 
+// сортировка для дропдауна: tentative первыми, далее алфавит по label
+const statusPriority = (st) => (st === 'tentative' ? 0 : 1)
+const sortedGuides = (row) => {
+const arr = (row.all_guides || row.candidates || [])
+  return [...arr].sort((a, b) => {
+    const pa = statusPriority(a?.status)
+    const pb = statusPriority(b?.status)
+    if (pa !== pb) return pa - pb
+    const la = (a?.display_name || a?.email || a?.user_id || '').toLowerCase()
+    const lb = (b?.display_name || b?.email || b?.user_id || '').toLowerCase()
+    return la.localeCompare(lb)
+  })
+}
+
 // имя гида по id из строки
 function displayForUser(userId, row) {
   const c = (row.candidates || []).find(x => x.user_id === userId)
@@ -192,6 +206,7 @@ function rowClassName({ row }) {
 
 onMounted(async () => {
   await load()
+ 
   // realtime: на любое изменение service_guides — перезагружаем
   channel = supabase
     .channel('service-table')
