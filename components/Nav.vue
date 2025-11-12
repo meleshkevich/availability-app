@@ -6,13 +6,13 @@
     :ellipsis="false"
     @select="handleSelect"
   >
-    <el-menu-item index="/">
+    <el-menu-item index="/" class="nav-logo">
       <!-- <img
         style="width: 100px"
         src=""
         alt="App logo"
       /> -->
-      <NuxtLink to="/" class="nav-logo">Availability App</NuxtLink>
+      <NuxtLink to="/" >Availability App</NuxtLink>
     </el-menu-item>
 
     <!-- admin-visible -->
