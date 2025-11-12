@@ -1,59 +1,81 @@
 <template>
-  <nav class="nav">
-    <div class="nav-container">
-      <!-- Лого или название -->
+  <el-menu
+    :default-active="activeIndex"
+    class="nav"
+    mode="horizontal"
+    :ellipsis="false"
+    @select="handleSelect"
+  >
+    <el-menu-item index="/">
+      <!-- <img
+        style="width: 100px"
+        src=""
+        alt="App logo"
+      /> -->
       <NuxtLink to="/" class="nav-logo">Availability App</NuxtLink>
+    </el-menu-item>
 
-   <ul class="nav-menu">
-   <!-- admin-visible -->
-  <template v-if="isLoggedIn && admin">
-    <li>
-      <NuxtLink to="/admin" class="nav-link" active-class="active">Services</NuxtLink>
-    </li>
-    <li>
-      <NuxtLink to="/guides" class="nav-link" active-class="active">Guides</NuxtLink>
-    </li>
-  </template>
+    <!-- admin-visible -->
+    <template v-if="isLoggedIn && admin">
+  <el-menu-item index="/services" class="nav-link">
+    Services
+  </el-menu-item>
+  <el-menu-item index="/guides">
+     Guides 
+  </el-menu-item>
+    </template>
 
-  <!-- user-visible -->
-  <template v-else>
-    <li>
-      <NuxtLink to="/services" class="nav-link" active-class="active">Services</NuxtLink>
-    </li>
-    <li>
-      <NuxtLink to="/myServices" class="nav-link" active-class="active">My Services</NuxtLink>
-    </li>
-  </template>
+    <!-- user-visible -->
+    <template v-else>
+      <el-menu-item index="/services">
+        Services
+      </el-menu-item>
+      <el-menu-item index="/myServices">
+        My Services 
+      </el-menu-item>
+    </template>
 
-  <!-- user info / login -->
-  <li v-if="isLoggedIn" class="nav-user">
-    <span class="user-email">{{ displayName }}</span>
-    <el-button link type="danger" @click="signOut">|| Logout</el-button>
-  </li>
-  <li v-else>
-    <NuxtLink to="/" class="nav-link login">|| Login</NuxtLink>
-  </li>
-</ul>
+    <!-- user info / login -->
+      <div style="display: flex; flex-grow: 1; justify-content: flex-end;">
+    <el-menu-item v-if="isLoggedIn" class="nav-user">
+      <span class="user-email">{{ displayName }}</span>
+      <el-button link type="danger" @click="signOut">|| Logout</el-button>
+    </el-menu-item>
+    <el-menu-item v-else>
+      <NuxtLink to="/" class="nav-link login">|| Login</NuxtLink>
+    </el-menu-item>
     </div>
-  </nav>
+  </el-menu>
 </template>
 
 <script setup>
 import { ref, watchEffect, onMounted } from 'vue'
-const { signOut, isLoggedIn, user, displayName } = useAuth()
+import { useRouter } from 'vue-router' // Import useRouter
+
+const { signOut, isLoggedIn, user, displayName } = useAuth() // Assume useAuth is defined and imported
+
+const router = useRouter() // Get the router instance
 
 const admin = ref(false)
+const activeIndex = ref('1')
+
+const handleSelect = (key, keyPath) => {
+  // Using Nuxt Router to navigate based on selected key
+  router.push({
+    path: keyPath[0] // assuming keyPath contains the desired route
+  })
+}
 
 onMounted(() => checkAdmin())
 watchEffect(() => checkAdmin())
 
 function checkAdmin() {
-  // 🔧 замени ID на реальный или используй флаг из user_metadata
   admin.value = user?.value?.id === '16dfdc03-dd0b-41d5-801f-d2c6a91efb0c'
 }
 </script>
 
 <style scoped>
+ 
 .nav {
   background: var(--el-bg-color-overlay, #fff);
   border-bottom: 1px solid var(--el-border-color, #eaeaea);
@@ -141,3 +163,5 @@ function checkAdmin() {
   }
 }
 </style>
+ 
+
