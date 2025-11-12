@@ -104,13 +104,6 @@ let svcQuery = admin.from('services')
     })
   }
 
-// const itemsAll = services.map(s => {
-//   const cands = bySvc[s.id] || []
-//   const confirmed = cands.find(c => c.status === 'confirmed') || null
-//   const serviceName = (s as any).service_types?.name ?? (s as any).service ?? null
-//   return { ...s, service: serviceName, candidates: cands, confirmed }
-// })
-
 const itemsAll = services.map(s => {
   const cands = bySvc[s.id] || []
   const confirmed = cands.find(c => c.status === 'confirmed') || null
