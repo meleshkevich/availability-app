@@ -1,49 +1,38 @@
 <template>
-  <el-menu
-    :default-active="activeIndex"
-    class="nav"
-    mode="horizontal"
-    :ellipsis="false"
-    @select="handleSelect"
-  >
-    <el-menu-item index="/" class="nav-logo">
-      <!-- <img
-        style="width: 100px"
-        src=""
-        alt="App logo"
-      /> -->
-      <NuxtLink to="/" >Availability App</NuxtLink>
-    </el-menu-item>
+  <el-menu :default-active="activeIndex" class="nav" mode="horizontal" :ellipsis="false" @select="handleSelect">
+<el-menu-item index="/" class="nav-logo">
+  <div class="nav-logo-text">Availability App</div>
+</el-menu-item>
+    <div style="display: flex; flex-grow: 1; justify-content: flex-end;">
+      <!-- admin-visible -->
+      <template v-if="isLoggedIn && admin">
+        <el-menu-item index="/admin" class="nav-link">
+          Services
+        </el-menu-item>
+        <el-menu-item index="/guides">
+          Guides
+        </el-menu-item>
+      </template>
 
-    <!-- admin-visible -->
-    <template v-if="isLoggedIn && admin">
-  <el-menu-item index="/services" class="nav-link">
-    Services
-  </el-menu-item>
-  <el-menu-item index="/guides">
-     Guides 
-  </el-menu-item>
-    </template>
+      <!-- user-visible -->
+      <template v-else>
+        <el-menu-item index="/services">
+          Services
+        </el-menu-item>
+        <el-menu-item index="/myServices">
+          My Services
+        </el-menu-item>
+      </template>
 
-    <!-- user-visible -->
-    <template v-else>
-      <el-menu-item index="/services">
-        Services
-      </el-menu-item>
-      <el-menu-item index="/myServices">
-        My Services 
-      </el-menu-item>
-    </template>
+      <!-- user info / login -->
 
-    <!-- user info / login -->
-      <div style="display: flex; flex-grow: 1; justify-content: flex-end;">
-    <el-menu-item v-if="isLoggedIn" class="nav-user">
-      <span class="user-email">{{ displayName }}</span>
-      <el-button link type="danger" @click="signOut">|| Logout</el-button>
-    </el-menu-item>
-    <el-menu-item v-else>
-      <NuxtLink to="/" class="nav-link login">|| Login</NuxtLink>
-    </el-menu-item>
+      <div v-if="isLoggedIn" class="nav-user">
+        <span class="user-email">{{ displayName }}</span>
+        <el-button text bg size="large" type="danger" @click="signOut">|| Logout</el-button>
+      </div>
+      <div class="nav-user" v-else>
+        <el-button text bg size="large" type="success" @click="handleSelect('', '/')">|| Login</el-button>
+      </div>
     </div>
   </el-menu>
 </template>
@@ -75,14 +64,14 @@ function checkAdmin() {
 </script>
 
 <style scoped>
- 
 .nav {
   background: var(--el-bg-color-overlay, #fff);
   border-bottom: 1px solid var(--el-border-color, #eaeaea);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1500;        /* выше контента и попапов */
+  width: 100%;
 }
 
 .nav-container {
@@ -104,6 +93,11 @@ function checkAdmin() {
 
 .nav-logo:hover {
   color: var(--el-color-primary-light-3, #66b1ff);
+}
+
+.nav-logo-text {
+  font-weight: 600;
+  line-height: 56px;    /* подогнать под твою высоту меню */
 }
 
 .nav-menu {
@@ -157,11 +151,10 @@ function checkAdmin() {
     padding: 8px 16px;
     align-items: flex-start;
   }
+
   .nav-menu {
     flex-wrap: wrap;
     gap: 8px;
   }
 }
 </style>
- 
-

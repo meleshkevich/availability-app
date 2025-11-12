@@ -1,20 +1,17 @@
 <template>
-  <div class="app-root">
-    <!-- Глобальная навигация -->
+  <header class="site-header">
     <Nav />
-
-    <!-- Контейнер контента -->
-    <main class="page-wrap">
+  </header>
+  <el-container class="app-root">
+    <el-main class="page-wrap">
       <slot />
-    </main>
-
-    <!-- (опционально) футер -->
-    <footer class="footer">© {{ new Date().getFullYear() }} — Availability App -</footer>
-  </div>
+    </el-main>
+    <footer class="footer">© {{ new Date().getFullYear() }} -- Availability App --</footer>
+  </el-container>
 </template>
 
 <script setup>
-// ничего не нужно
+//  
 </script>
 
 <style scoped>
@@ -22,6 +19,17 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: var(--el-bg-color-overlay, #fff);
+  border-bottom: 1px solid var(--el-border-color, #eaeaea);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* общий контейнер для страниц */
@@ -32,7 +40,6 @@
   padding: 8px 16px;
 }
 
-/* необязательный футер */
 .footer {
   border-top: 1px solid #eee;
   padding: 12px 16px;
@@ -40,5 +47,4 @@
   color: #666;
   font-size: 14px;
 }
-
 </style>
