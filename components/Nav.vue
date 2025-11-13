@@ -6,7 +6,7 @@
     <div style="display: flex; flex-grow: 1; justify-content: flex-end;">
       <!-- admin-visible -->
       <template v-if="isLoggedIn && admin">
-        <el-menu-item index="/admin" class="nav-link">
+        <el-menu-item index="/admin">
           Services
         </el-menu-item>
         <el-menu-item index="/guides">

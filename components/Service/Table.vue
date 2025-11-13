@@ -90,7 +90,7 @@
             <el-button v-if="row.confirmed?.user_id" size="small" type="danger" :loading="row._busy"
               @click="cancelConfirmed(row)">Cancel</el-button>
 
-            <el-button v-if="!row.confirmed?.user_id" size="small" type="danger" :disabled="row._selected"
+            <el-button v-if="!row.confirmed?.user_id && !showApproveCxl(row)" size="small" type="danger" :disabled="row._selected"
               :loading="row._busy" @click="deleteService(row)">Delete
             </el-button>
           </template>

@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="header">
-      <h2>Guides</h2>
+      <h3>Guides</h3>
       <div class="actions">
         <el-input
           v-model="q"
@@ -130,8 +130,10 @@ onMounted(load)
 </script>
 
 <style scoped>
-.container { max-width: 100%; margin: 0 auto; padding: 24px 0; }
+.container { max-width: 100%; margin: 0 auto; padding: 3rem 0;  }
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .actions { display: flex; gap: 8px; }
 .pagination { display: flex; justify-content: center; margin-top: 12px; }
+h2 { margin-bottom: 1rem; }
+h3 { font-size: 2rem; }
 </style>
