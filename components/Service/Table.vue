@@ -3,19 +3,12 @@
     <!-- Фильтры и кнопка Refresh — во всех режимах -->
     <div class="filters" :class="isAdminMode ? 'filters--admin' : 'filters--user'">
       <el-input v-model="q" placeholder="Search service/sailing…" clearable @input="debouncedLoad" />
-      <el-input v-if="isAdminMode"  v-model="guide" placeholder="Guide name/email…" clearable @input="debouncedLoad" />
+      <el-input v-if="isAdminMode" v-model="guide" placeholder="Guide name/email…" clearable @input="debouncedLoad" />
       <el-input v-model="sailing" placeholder="Sailing" clearable @input="debouncedLoad" />
-      <el-date-picker
-       class="filter-date"
-        v-model="dateRange"
-        type="daterange"
-        value-format="YYYY-MM-DD"
-        range-separator="to"
-        start-placeholder="From"
-        end-placeholder="To"
-        @change="onFilterChange"
-      />
-      <el-select  class="filter-status" v-model="status" placeholder="Status" clearable @change="onFilterChange" style="min-width:160px">
+      <el-date-picker class="filter-date" v-model="dateRange" type="daterange" value-format="YYYY-MM-DD"
+        range-separator="to" start-placeholder="From" end-placeholder="To" @change="onFilterChange" />
+      <el-select class="filter-status" v-model="status" placeholder="Status" clearable @change="onFilterChange"
+        style="min-width:160px">
         <el-option label="Tentative" value="tentative" />
         <el-option label="Confirmed" value="confirmed" />
         <el-option label="CXL Requested" value="cxl_requested" />
@@ -23,18 +16,13 @@
       </el-select>
       <div class="filters__spacer"></div>
       <el-button @click="load" :loading="loading">Refresh</el-button>
-      <el-button v-if="!isAdminMode && props.mode==='mine'" type="primary" @click="exportPdfMine">
-      Export PDF
-    </el-button>
+      <el-button v-if="!isAdminMode && props.mode === 'mine'" type="primary" @click="exportPdfMine">
+        Export PDF
+      </el-button>
     </div>
   </el-card>
-  <el-card class="card"> 
-    <el-table
-      :data="visibleRows"
-      v-loading="loading"
-      :row-class-name="rowClassName"
-      style="width:100%"
-    >
+  <el-card class="card">
+    <el-table :data="visibleRows" v-loading="loading" :row-class-name="rowClassName" style="width:100%">
       <!-- базовые поля -->
       <el-table-column prop="sailing" label="Sailing" width="150" />
       <el-table-column prop="date" label="Date" width="120" />
@@ -55,18 +43,13 @@
               <span class="guide-name">{{ displayForUser(row.confirmed.user_id, row) }}</span>
               <div class="right">
                 <el-tag type="success" effect="light">Confirmed</el-tag>
-                
+
               </div>
             </div>
           </template>
           <template v-else>
             <el-select v-model="row._selected" placeholder="Select guide" filterable clearable style="width:100%">
-              <el-option
-                v-for="c in sortedGuides(row)"
-                :key="c.user_id"
-                :label="formatGuide(c)"
-                :value="c.user_id"
-              >
+              <el-option v-for="c in sortedGuides(row)" :key="c.user_id" :label="formatGuide(c)" :value="c.user_id">
                 <div class="opt">
                   <span>{{ c.display_name || c.email || c.user_id }}</span>
                   <el-tag v-if="c.status" size="small" :type="statusType(c.status)">{{ statusLabel(c.status) }}</el-tag>
@@ -82,50 +65,44 @@
         <template #default="{ row }">
           <!-- USER MODES -->
           <template v-if="!isAdminMode">
-            <el-button v-if="row._myStatus==='none' || row._myStatus==='cxl'" size="small" :loading="row._busy" @click="selectService(row)">
+            <el-button v-if="row._myStatus === 'none' || row._myStatus === 'cxl'" size="small" :loading="row._busy"
+              @click="selectService(row)">
               Select
             </el-button>
-            <el-button v-if="row._myStatus==='tentative'" size="small" :loading="row._busy" @click="unselectService(row)">
+            <el-button v-if="row._myStatus === 'tentative'" size="small" :loading="row._busy"
+              @click="unselectService(row)">
               Unselect
             </el-button>
-            <el-button v-if="row._myStatus==='confirmed'" size="small" type="warning" :loading="row._busy" @click="requestCxl(row)">
+            <el-button v-if="row._myStatus === 'confirmed'" size="small" type="warning" :loading="row._busy"
+              @click="requestCxl(row)">
               Request CXL
             </el-button>
           </template>
 
           <!-- ADMIN MODE -->
           <template v-else>
-            <el-button
-              v-if="!row.confirmed?.user_id"
-              type="primary"
-              size="small"
-              :disabled="!row._selected"
-              :loading="row._busy"
-              @click="confirm(row)"
-            >Confirm</el-button>
+            <el-button v-if="!row.confirmed?.user_id" type="primary" size="small" :disabled="!row._selected"
+              :loading="row._busy" @click="confirm(row)">Confirm</el-button>
 
-            <el-button
-              v-if="showApproveCxl(row)"
-              type="warning" size="small"
-              :loading="row._busy"
-              @click="approveCxl(row)"
-            >Approve CXL</el-button>
-            <el-button v-if="row.confirmed?.user_id" size="small" type="danger" :loading="row._busy" @click="cancelConfirmed(row)">Cancel</el-button>
+            <el-button v-if="showApproveCxl(row)" type="warning" size="small" :loading="row._busy"
+              @click="approveCxl(row)">Approve CXL</el-button>
+
+            <el-button v-if="row.confirmed?.user_id" size="small" type="danger" :loading="row._busy"
+              @click="cancelConfirmed(row)">Cancel</el-button>
+
+            <el-button v-if="!row.confirmed?.user_id" size="small" type="danger" :disabled="row._selected"
+              :loading="row._busy" @click="deleteService(row)">Delete
+            </el-button>
           </template>
         </template>
       </el-table-column>
+
     </el-table>
 
     <!-- Пагинация — по группам -->
     <div class="pagination">
-      <el-pagination
-        background
-        layout="prev, pager, next"
-        :page-size="perPage"
-        :current-page="page"
-        :total="groupsTotal"
-        @current-change="onPage"
-      />
+      <el-pagination background layout="prev, pager, next" :page-size="perPage" :current-page="page"
+        :total="groupsTotal" @current-change="onPage" />
     </div>
   </el-card>
 </template>
@@ -133,11 +110,12 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
-import {statusLabel, statusType} from '~/utils/status'
+import { statusLabel, statusType } from '~/utils/status'
 import useSupabase from '~/composables/useSupabase'
 import { useDataStore } from '~/stores/data'
 import { usePdfExport } from '@/composables/usePdfExport'
 import { todayYMD, toYMD } from '~/utils/dateFunctions'
+import { useDeleteWarning } from '~/composables/useDeleteWarning'
 
 const props = defineProps({
   mode: { type: String, default: 'all' } // all | mine | admin
@@ -146,8 +124,8 @@ const props = defineProps({
 const { supabase } = useSupabase()
 const dataStore = useDataStore()
 const isAdminMode = computed(() => props.mode === 'admin')
-const { $pdfMake } = useNuxtApp()             
-const { handleExport } = usePdfExport($pdfMake)  
+const { $pdfMake } = useNuxtApp()
+const { handleExport } = usePdfExport($pdfMake)
 
 /** фильтры/пагинация общие */
 const q = ref('')
@@ -174,7 +152,7 @@ function formatGuide(c) {
 // сортировка для дропдауна: tentative первыми, далее алфавит по label
 const statusPriority = (st) => (st === 'tentative' ? 0 : 1)
 const sortedGuides = (row) => {
-const arr = (row.all_guides || row.candidates || [])
+  const arr = (row.all_guides || row.candidates || [])
   return [...arr].sort((a, b) => {
     const pa = statusPriority(a?.status)
     const pb = statusPriority(b?.status)
@@ -206,7 +184,7 @@ function rowClassName({ row }) {
 
 onMounted(async () => {
   await load()
- 
+
   // realtime: на любое изменение service_guides — перезагружаем
   channel = supabase
     .channel('service-table')
@@ -230,7 +208,7 @@ function buildGroups(flatRows) {
   }
   const groupsRaw = Array.from(bySailing.entries()).map(([sailing, items]) => {
     items.sort((a, b) => String(a.date).localeCompare(String(b.date)))
-    const firstDate = items.length ? String(items[0].date).slice(0,10) : '9999-12-31'
+    const firstDate = items.length ? String(items[0].date).slice(0, 10) : '9999-12-31'
     return { sailing, firstDate, items }
   })
   groupsRaw.sort((a, b) => {
@@ -243,7 +221,7 @@ function buildGroups(flatRows) {
 function computeVisibleRowsFromGroups() {
   groupsTotal.value = groups.value.length
   const startGrp = (page.value - 1) * perPage.value
-  const endGrp   = startGrp + perPage.value
+  const endGrp = startGrp + perPage.value
   const pageGroups = groups.value.slice(startGrp, endGrp)
 
   let idx = startGrp
@@ -265,7 +243,7 @@ const visibleRows = computed(() => {
   // user: берём rows.value, применяем локальные фильтры и группируем
   const [from, to] = dateRange.value || []
   const df = toYMD(from) || null
-  const dt = toYMD(to)   || null
+  const dt = toYMD(to) || null
   const ql = (q.value || '').toLowerCase()
   const sail = (sailing.value || '').toLowerCase()
 
@@ -275,7 +253,7 @@ const visibleRows = computed(() => {
       String(r.service || '').toLowerCase().includes(ql) ||
       String(r.sailing || '').toLowerCase().includes(ql)
     const matchesSailing = !sail || String(r.sailing || '').toLowerCase().includes(sail)
-    const dateStr = String(r.date || '').slice(0,10)
+    const dateStr = String(r.date || '').slice(0, 10)
     const matchesDate = (!df || dateStr >= df) && (!dt || dateStr <= dt)
     const matchesStatus = !status.value || r._myStatus === status.value
     return matchesSearch && matchesSailing && matchesDate && matchesStatus
@@ -290,7 +268,7 @@ const visibleRows = computed(() => {
 })
 
 /** LOAD **/
-async function load () {
+async function load() {
   loading.value = true
   try {
     if (isAdminMode.value) {
@@ -307,15 +285,15 @@ async function load () {
           dateTo: toYMD(to)
         }
       })
-     const flat = (res.items || []).map(r => {
-     const cxlReq = (r.candidates || []).find(c => c.status === 'cxl_requested')
-     const preselect = cxlReq?.user_id ?? r.confirmed?.user_id ?? null
-     return {
-       ...r,
-       _selected: preselect,
-       _busy: false
-     }
-   })
+      const flat = (res.items || []).map(r => {
+        const cxlReq = (r.candidates || []).find(c => c.status === 'cxl_requested')
+        const preselect = cxlReq?.user_id ?? r.confirmed?.user_id ?? null
+        return {
+          ...r,
+          _selected: preselect,
+          _busy: false
+        }
+      })
       groups.value = buildGroups(flat)
       return
     }
@@ -370,11 +348,11 @@ function hasServiceShape(obj) {
 /** пагинация и фильтры */
 function onPage(p) { page.value = p; loadIfAdmin() }
 function onFilterChange() { page.value = 1; loadIfAdmin() }
-let t; function debouncedLoad(){ clearTimeout(t); page.value = 1; t = setTimeout(loadIfAdmin, 300) }
+let t; function debouncedLoad() { clearTimeout(t); page.value = 1; t = setTimeout(loadIfAdmin, 300) }
 function loadIfAdmin() { if (isAdminMode.value) load() }
 
 /** USER actions **/
-async function selectService (row) {
+async function selectService(row) {
   const { data: auth } = await supabase.auth.getUser()
   if (!auth?.user) return ElMessage.info('Please log in')
   row._busy = true
@@ -388,7 +366,7 @@ async function selectService (row) {
   } catch (e) { console.error(e); ElMessage.error(e.message || 'Unable to select') }
   finally { row._busy = false }
 }
-async function unselectService (row) {
+async function unselectService(row) {
   const { data: auth } = await supabase.auth.getUser()
   if (!auth?.user) return ElMessage.info('Please log in')
   row._busy = true
@@ -405,7 +383,7 @@ async function unselectService (row) {
   } catch (e) { console.error(e); ElMessage.error(e.message || 'Unable to unselect') }
   finally { row._busy = false }
 }
-async function requestCxl (row) {
+async function requestCxl(row) {
   const { data: auth } = await supabase.auth.getUser()
   if (!auth?.user) return ElMessage.info('Please log in')
   row._busy = true
@@ -424,7 +402,7 @@ async function requestCxl (row) {
 }
 
 /** ADMIN actions **/
-async function confirm (row) {
+async function confirm(row) {
   if (!row._selected) return
   row._busy = true
   try {
@@ -442,7 +420,7 @@ async function confirm (row) {
   finally { row._busy = false }
 }
 
-async function approveCxl (row) {
+async function approveCxl(row) {
   if (!row._selected) return
   const sel = (row.candidates || []).find(c => c.user_id === row._selected)
   if (!sel || sel.status !== 'cxl_requested') return
@@ -464,7 +442,7 @@ async function approveCxl (row) {
   finally { row._busy = false }
 }
 
-async function cancelConfirmed (row) {
+async function cancelConfirmed(row) {
   const uid = row.confirmed?.user_id
   if (!uid) return
   row._busy = true
@@ -483,6 +461,40 @@ async function cancelConfirmed (row) {
   finally { row._busy = false }
 }
 
+
+async function deleteService(row) {
+  console.log(row);
+  const uid = row.id
+
+  const { confirm } = useDeleteWarning()
+
+  // 1) спрашиваем подтверждение
+  const ok = await confirm({
+    title: 'Permanent deletion warning!',
+    message: `Are you sure to delete permanently <b>${row.service}</b> for <b>${row.sailing}</b>?`,
+    confirmText: 'Yes, delete it!',
+    cancelText: 'Cancel'
+  })
+
+  if (!ok) {
+    ElMessage.info('Delete cancelled')
+    return
+  }
+
+  row._busy = true
+  try {
+    await $fetch('/api/admin/services/delete-service', {
+      method: 'DELETE',
+      body: { service_id: uid }
+    })
+
+    ElMessage.success('Cancelled');
+    load()
+  } catch (e) { console.error(e); ElMessage.error(e.message || 'Delete failed'); await load() }
+  finally { row._busy = false }
+
+}
+
 // PDF Экспорт только для режима 'mine'  
 function exportPdfMine() {
   const srcRows = visibleRows?.value ?? rows?.value ?? []
@@ -498,7 +510,10 @@ function exportPdfMine() {
 </script>
 
 <style scoped>
-.card { margin-top: 1rem; padding: 1rem; }
+.card {
+  margin-top: 1rem;
+  padding: 1rem;
+}
 
 .filters {
   display: grid;
@@ -506,11 +521,25 @@ function exportPdfMine() {
   align-items: center;
   margin-bottom: 12px;
 }
-.filter-date { width: 260px; }   
+
+.filter-date {
+  width: 260px;
+}
+
 :deep(.filter-date.el-date-editor),
-:deep(.filter-status .el-select) { width: 100%; }
-.filter-status { width: 140px;  margin-left: 20px; }  
-.filters__spacer { width: 100%; }
+:deep(.filter-status .el-select) {
+  width: 100%;
+}
+
+.filter-status {
+  width: 140px;
+  margin-left: 20px;
+}
+
+.filters__spacer {
+  width: 100%;
+}
+
 /* ADMIN: q | guide | sailing | date | status | spacer | buttons... */
 .filters--admin {
   grid-template-columns: 1fr 1fr 180px 260px 140px 1fr auto auto;
@@ -523,26 +552,49 @@ function exportPdfMine() {
 
 /* на узких экранах разрешим перенос */
 @media (max-width: 900px) {
+
   .filters--admin,
   .filters--user {
     grid-template-columns: 1fr 1fr;
   }
-  .filter-date, .filter-status { width: 100%; }
-  .filters__spacer { display: none; }
+
+  .filter-date,
+  .filter-status {
+    width: 100%;
+  }
+
+  .filters__spacer {
+    display: none;
+  }
 }
 
-.pagination { display: flex; justify-content: center; margin-top: 12px; }
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
 
-.opt { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
 
-.ml-2 { margin-left: 8px; }
-.guide-name { font-weight: 500; }
+.ml-2 {
+  margin-left: 8px;
+}
+
+.guide-name {
+  font-weight: 500;
+}
 
 .guide-cell {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
 .guide-cell .right {
   display: flex;
   align-items: center;
@@ -550,6 +602,11 @@ function exportPdfMine() {
 }
 
 /* Зебра по группам */
-:deep(.el-table .grp-even > td) { background: #F3F8FB; }
-:deep(.el-table .grp-odd  > td) { background: #ffffff; }
+:deep(.el-table .grp-even > td) {
+  background: #F3F8FB;
+}
+
+:deep(.el-table .grp-odd > td) {
+  background: #ffffff;
+}
 </style>
