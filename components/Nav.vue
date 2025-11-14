@@ -12,6 +12,9 @@
         <el-menu-item index="/guides">
           Guides
         </el-menu-item>
+         <el-menu-item index="/serviceTypes">
+          Service types
+        </el-menu-item>
       </template>
 
       <!-- user-visible -->

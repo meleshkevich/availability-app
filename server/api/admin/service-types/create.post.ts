@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await admin
     .from('service_types')
     .insert({ name: clean })
-    .select('id, name, created_at')
+    .select('id, name, created_at, start_time, end_time, duration_minutes')
     .single()
 
   if (error) {

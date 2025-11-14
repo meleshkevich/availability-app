@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const search = String(q.q ?? '').trim()
 
   let sel = admin.from('service_types')
-    .select('id, name, created_at', { count: 'exact' })
+    .select('id, name, created_at, start_time, end_time, duration_minutes', { count: 'exact' })
     .order('name', { ascending: true })
 
   if (search) sel = sel.ilike('name', `%${search}%`)
