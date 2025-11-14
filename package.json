@@ -9,6 +9,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxtjs/supabase": "^2.0.1",
     "@pinia/nuxt": "0.4.11",
     "@supabase/supabase-js": "^2.45.0",
     "element-plus": "^2.8.7",
