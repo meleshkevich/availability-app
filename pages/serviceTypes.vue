@@ -313,9 +313,9 @@ onMounted(fetchTypes)
 
 <style scoped>
 .container { max-width: 100%; margin: 0 auto; padding: 3rem 0; }
-.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; margin-bottom: 1rem; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.pagination { display: flex; justify-content: center; margin-top: 12px; }
+.pagination { display: flex; justify-content: center; margin-top: 1rem; }
 .card { margin-top: 8px; }
 h3 { font-size: 2rem; margin: 0; }
 </style>
