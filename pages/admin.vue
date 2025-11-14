@@ -1,6 +1,7 @@
 <template>
   <div class="container">
     <h3>Admin — Services</h3>
+ <Icon name="uil:github" size="24" class="text-black" aria-hidden="true" />
      <AdminAddService />
     <ServiceTable mode="admin" />
   </div>
