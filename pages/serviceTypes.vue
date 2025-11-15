@@ -88,7 +88,7 @@
           <el-time-select v-model="editForm.end_time" start="06:00" step="00:15" end="23:45" placeholder="HH:mm" />
         </el-form-item>
         <el-form-item label="Duration (min)">
-          <el-input-number v-model="editForm.duration_minutes" :min="0" :step="5" controls-position="right" />
+          <div>{{ computedDurationEdit }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -173,6 +173,14 @@ function hmToMinutes(hm?: string | null) {
   return h * 60 + m
 }
 
+function calcDurationMinutes(startHM?: string | null, endHM?: string | null) {
+  const s = hmToMinutes(startHM)
+  const e = hmToMinutes(endHM)
+  if (s == null || e == null) return null
+  const diff = e - s
+  return diff >= 0 ? diff : null
+}
+
 // показываемая длительность
 const computedDuration = computed(() => {
   const s = hmToMinutes(newType.value.start_time)
@@ -182,6 +190,31 @@ const computedDuration = computed(() => {
   if (diff < 0) return '-' // или можно добавить 24ч, если нужно «через полночь»
   return diff
 })
+
+// привести "HH:mm:ss" -> "HH:mm" для поля редактирования
+function toHHMM(v?: string | null) {
+  if (!v) return null
+  if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5)
+  return normalizeHHMM(v).slice(0, 5)
+}
+
+// duration для EDIT (display-only)
+const computedDurationEdit = computed(() => {
+  const s = hmToMinutes(editForm.value.start_time)
+  const e = hmToMinutes(editForm.value.end_time)
+  if (s == null || e == null) return '-'
+  const diff = e - s
+  return diff >= 0 ? diff : '-'
+})
+
+// синхронизация значения в модель (на всякий случай, вдруг используешь где-то ещё)
+watch(
+  [() => editForm.value.start_time, () => editForm.value.end_time],
+  () => {
+    editForm.value.duration_minutes = calcDurationMinutes(editForm.value.start_time, editForm.value.end_time)
+  },
+  { immediate: true }
+)
 
 // записываем в модель, чтобы улетало на бэкенд
 watch(
@@ -226,14 +259,14 @@ async function createType() {
   creatingType.value = true
   try {
     const start = newType.value.start_time ? normalizeHHMM(newType.value.start_time) : undefined
-    const end   = newType.value.end_time   ? normalizeHHMM(newType.value.end_time)   : undefined
+    const end = newType.value.end_time ? normalizeHHMM(newType.value.end_time) : undefined
 
     // формируем body одним объектом
     const body: any = {
       name: newType.value.name.trim(),
       ...(start ? { start_time: start } : {}),
-      ...(end   ? { end_time: end }     : {}),
-    
+      ...(end ? { end_time: end } : {}),
+
     }
 
     await $fetch('/api/admin/service-types/create', {
@@ -280,8 +313,8 @@ function openEdit(row: any) {
   editRow.value = row
   editForm.value = {
     name: row.name ?? '',
-    start_time: row.start_time ?? null,
-    end_time: row.end_time ?? null,
+    start_time: toHHMM(row.start_time ?? null),
+    end_time: toHHMM(row.end_time ?? null),
     duration_minutes: row.duration_minutes ?? null,
   }
   editOpen.value = true
@@ -297,12 +330,22 @@ async function saveEdit() {
   try {
     const row = editRow.value
     const body: any = { id: row.id }
-    if (editForm.value.name.trim() !== (row.name ?? '')) body.name = editForm.value.name.trim()
+
+    const newName = editForm.value.name.trim()
+    if (newName !== (row.name ?? '')) body.name = newName
+
+    // нормализуем к HH:mm, сравниваем с тем, что лежит в row.* (может быть HH:mm:ss)
     const s = editForm.value.start_time ? normalizeHHMM(editForm.value.start_time) : null
-    const e = editForm.value.end_time ? normalizeHHMM(editForm.value.end_time) : null
-    if (s !== (row.start_time ?? null)) body.start_time = s
-    if (e !== (row.end_time ?? null)) body.end_time = e
-    if ((editForm.value.duration_minutes ?? null) !== (row.duration_minutes ?? null)) body.duration_minutes = editForm.value.duration_minutes
+    const e = editForm.value.end_time   ? normalizeHHMM(editForm.value.end_time)   : null
+
+    // Приводим row.* к HH:mm для корректного сравнения
+    const rowS = row.start_time ? normalizeHHMM(row.start_time) : null
+    const rowE = row.end_time   ? normalizeHHMM(row.end_time)   : null
+
+    if (s !== rowS) body.start_time = s
+    if (e !== rowE) body.end_time = e
+
+    // duration_minutes НЕ отправляем — это generated column в БД
 
     if (Object.keys(body).length === 1) {
       ElMessage.info('No changes')
