@@ -3,13 +3,7 @@
     <div class="header">
       <h3>Service Types</h3>
       <div class="actions">
-        <el-input
-          v-model="q"
-          placeholder="Search by name"
-          clearable
-          style="width: 280px"
-          @input="debouncedFetch"
-        />
+        <el-input v-model="q" placeholder="Search by name" clearable style="width: 280px" @input="debouncedFetch" />
         <el-button @click="fetchTypes" :loading="loadingTypes">Refresh</el-button>
       </div>
     </div>
@@ -31,7 +25,7 @@
             <el-time-select v-model="newType.end_time" start="06:00" step="00:15" end="23:45" placeholder="HH:mm" />
           </el-form-item>
           <el-form-item label="Duration (min)">
-            <el-input-number v-model="newType.duration_minutes" :min="0" :step="5" controls-position="right" />
+            <div>{{ computedDuration }}</div>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" :disabled="!canCreate" @click="createType" :loading="creatingType">Add</el-button>
@@ -76,14 +70,8 @@
       </el-table>
 
       <div class="pagination">
-        <el-pagination
-          background
-          layout="prev, pager, next"
-          :page-size="perPage"
-          :current-page="page"
-          :total="count"
-          @current-change="onPage"
-        />
+        <el-pagination background layout="prev, pager, next" :page-size="perPage" :current-page="page" :total="count"
+          @current-change="onPage" />
       </div>
     </el-card>
 
@@ -104,7 +92,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editOpen=false" :disabled="savingEdit">Cancel</el-button>
+        <el-button @click="editOpen = false" :disabled="savingEdit">Cancel</el-button>
         <el-button type="primary" :loading="savingEdit" :disabled="!canSaveEdit" @click="saveEdit">Save</el-button>
       </template>
     </el-dialog>
@@ -113,7 +101,7 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 
 // Table state
 const items = ref<any[]>([])
@@ -169,7 +157,7 @@ const formatDate = (v?: string | null) => v ? new Date(v).toLocaleString() : '�
 const formatTime = (v?: string | null) => {
   if (!v) return '—'
   try {
-    if (/^\d{2}:\d{2}(:\d{2})?$/.test(v)) return v.slice(0,5)
+    if (/^\d{2}:\d{2}(:\d{2})?$/.test(v)) return v.slice(0, 5)
     const d = new Date(v)
     const hh = String(d.getHours()).padStart(2, '0')
     const mm = String(d.getMinutes()).padStart(2, '0')
@@ -177,10 +165,43 @@ const formatTime = (v?: string | null) => {
   } catch { return '—' }
 }
 
-async function fetchTypes () {
+// helper: "HH:mm" -> минуты с начала дня
+function hmToMinutes(hm?: string | null) {
+  if (!hm) return null
+  const [h, m] = hm.split(':').map(Number)
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+  return h * 60 + m
+}
+
+// показываемая длительность
+const computedDuration = computed(() => {
+  const s = hmToMinutes(newType.value.start_time)
+  const e = hmToMinutes(newType.value.end_time)
+  if (s == null || e == null) return '-'
+  const diff = e - s
+  if (diff < 0) return '-' // или можно добавить 24ч, если нужно «через полночь»
+  return diff
+})
+
+// записываем в модель, чтобы улетало на бэкенд
+watch(
+  [() => newType.value.start_time, () => newType.value.end_time],
+  () => {
+    const s = hmToMinutes(newType.value.start_time)
+    const e = hmToMinutes(newType.value.end_time)
+    if (s == null || e == null || e - s < 0) {
+      newType.value.duration_minutes = null
+    } else {
+      newType.value.duration_minutes = e - s
+    }
+  },
+  { immediate: true }
+)
+
+async function fetchTypes() {
   loadingTypes.value = true
   try {
-    const res = await $fetch<{ page:number; perPage:number; count:number; items:any[] }>(
+    const res = await $fetch<{ page: number; perPage: number; count: number; items: any[] }>(
       '/api/admin/service-types/list',
       {
         method: 'GET',
@@ -204,12 +225,23 @@ async function createType() {
   }
   creatingType.value = true
   try {
-    const body: any = { name: newType.value.name.trim() }
-    if (newType.value.start_time) body.start_time = normalizeHHMM(newType.value.start_time)
-    if (newType.value.end_time) body.end_time = normalizeHHMM(newType.value.end_time)
-    if (newType.value.duration_minutes != null) body.duration_minutes = Number(newType.value.duration_minutes)
+    const start = newType.value.start_time ? normalizeHHMM(newType.value.start_time) : undefined
+    const end   = newType.value.end_time   ? normalizeHHMM(newType.value.end_time)   : undefined
 
-    await $fetch('/api/admin/service-types/create', { method: 'POST', body })
+    // формируем body одним объектом
+    const body: any = {
+      name: newType.value.name.trim(),
+      ...(start ? { start_time: start } : {}),
+      ...(end   ? { end_time: end }     : {}),
+    
+    }
+
+    await $fetch('/api/admin/service-types/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, // на всякий
+      body
+    })
+
     ElMessage.success(`Created: ${body.name}`)
     resetCreate()
     createOpen.value = []
@@ -244,7 +276,7 @@ function normalizeHHMM(v: string) {
   }
 }
 
-function openEdit (row: any) {
+function openEdit(row: any) {
   editRow.value = row
   editForm.value = {
     name: row.name ?? '',
@@ -255,7 +287,7 @@ function openEdit (row: any) {
   editOpen.value = true
 }
 
-async function saveEdit () {
+async function saveEdit() {
   if (!editRow.value) return
   if (!canSaveEdit.value) {
     ElMessage.warning('Fix form errors')
@@ -303,7 +335,7 @@ function onPage(p: number) {
 }
 
 let t: any
-function debouncedFetch () {
+function debouncedFetch() {
   clearTimeout(t)
   t = setTimeout(fetchTypes, 300)
 }
@@ -312,10 +344,38 @@ onMounted(fetchTypes)
 </script>
 
 <style scoped>
-.container { max-width: 100%; margin: 0 auto; padding: 3rem 0; }
-.header { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; margin-bottom: 1rem; }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.pagination { display: flex; justify-content: center; margin-top: 1rem; }
-.card { margin-top: 8px; }
-h3 { font-size: 2rem; margin: 0; }
+.container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 3rem 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.card {
+  margin-top: 8px;
+}
+
+h3 {
+  font-size: 2rem;
+  margin: 0;
+}
 </style>
