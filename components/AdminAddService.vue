@@ -44,7 +44,7 @@
                     :loading="loadingTypes"
                     placeholder="Select service type"
                     style="min-width:260px"
-                    @visible-change="(v) => { if(v) fetchTypes('') }"
+                    @visible-change="(v: any) => { if(v) fetchTypes('') }"
                     clearable
                   >
                     <el-option
@@ -76,18 +76,31 @@
     </transition>
 
     <!-- Диалог создания нового типа -->
-    <el-dialog v-model="showNewType" title="New service type" width="420px">
-      <el-input v-model="newTypeName" placeholder="Type name (e.g. City Tour)" />
-      <template #footer>
-        <el-button @click="showNewType=false">Cancel</el-button>
-        <el-button type="primary" :loading="creatingType" @click="createType">Create</el-button>
-      </template>
-    </el-dialog>
+    <el-dialog v-model="showNewType" title="New service type" width="440px">
+  <el-form :model="newType" label-width="140px" @submit.prevent>
+    <el-form-item label="Name">
+      <el-input v-model="newType.name" placeholder="Type name (e.g. City Tour)" />
+    </el-form-item>
+    <el-form-item label="Start time">
+      <el-time-select v-model="newType.start_time" start="06:00" step="00:15" end="23:45" placeholder="HH:mm" />
+    </el-form-item>
+    <el-form-item label="End time">
+      <el-time-select v-model="newType.end_time" start="06:00" step="00:15" end="23:45" placeholder="HH:mm" />
+    </el-form-item>
+    <el-form-item label="Duration (min)">
+      <div>{{ computedDuration }}</div>
+    </el-form-item>
+  </el-form>
+  <template #footer>
+    <el-button @click="showNewType=false">Cancel</el-button>
+    <el-button type="primary" :loading="creatingType" :disabled="!canCreate" @click="createType">Create</el-button>
+  </template>
+</el-dialog>
   </el-card>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import UploadExcel from '~/components/UploadExcel.vue'
@@ -109,9 +122,66 @@ const submitting = ref(false)
 
 const showNewType = ref(false)
 const newTypeName = ref('')
+const newType = ref<{ name: string; start_time: string | null; end_time: string | null; duration_minutes: number | null }>({
+  name: '',
+  start_time: null,
+  end_time: null,
+  duration_minutes: null,
+})
 const creatingType = ref(false)
 
-async function fetchTypes (query) {
+const canCreate = computed(() => {
+  const n = newType.value.name.trim()
+  const nameOk = n.length >= 2 && n.length <= 120
+  const s = newType.value.start_time
+  const e = newType.value.end_time
+  const timesOk = (!s && !e) || (!!s && !!e) // либо оба пустые, либо оба заданы
+  return nameOk && timesOk
+})
+
+// --- helpers такие же, как в serviceTypes.vue ---
+function normalizeHHMM(v: string) {
+  if (/^\d{2}:\d{2}/.test(v)) return v.slice(0, 5)
+  try {
+    const d = new Date(v)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const mm = String(d.getMinutes()).padStart(2, '0')
+    return `${hh}:${mm}`
+  } catch {
+    return v
+  }
+}
+function hmToMinutes(hm?: string | null) {
+  if (!hm) return null
+  const [h, m] = hm.split(':').map(Number)
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+  return h * 60 + m
+}
+function calcDurationMinutes(startHM?: string | null, endHM?: string | null) {
+  const s = hmToMinutes(startHM)
+  const e = hmToMinutes(endHM)
+  if (s == null || e == null) return null
+  const diff = e - s
+  return diff >= 0 ? diff : null
+}
+
+const computedDuration = computed(() => {
+  const s = hmToMinutes(newType.value.start_time)
+  const e = hmToMinutes(newType.value.end_time)
+  if (s == null || e == null) return '-'
+  const diff = e - s
+  return diff >= 0 ? diff : '-'
+})
+
+watch(
+  [() => newType.value.start_time, () => newType.value.end_time],
+  () => {
+    newType.value.duration_minutes = calcDurationMinutes(newType.value.start_time, newType.value.end_time)
+  },
+  { immediate: true }
+)
+
+async function fetchTypes (query: string) {
   loadingTypes.value = true
   try {
     const res = await $fetch('/api/admin/service-types/list', {
@@ -128,21 +198,38 @@ async function fetchTypes (query) {
 }
 
 async function createType () {
-  if (!newTypeName.value.trim()) return
+  if (!canCreate.value) {
+    ElMessage.warning('Fill required fields')
+    return
+  }
   creatingType.value = true
   try {
+    const start = newType.value.start_time ? normalizeHHMM(newType.value.start_time) : undefined
+    const end   = newType.value.end_time   ? normalizeHHMM(newType.value.end_time)   : undefined
+
+    const body =  {
+      name: newType.value.name.trim(),
+      ...(start ? { start_time: start } : {}),
+      ...(end   ? { end_time: end }     : {}),
+    }
+
     const created = await $fetch('/api/admin/service-types/create', {
       method: 'POST',
-      body: { name: newTypeName.value.trim() }
+      headers: { 'Content-Type': 'application/json' },
+      body
     })
+
     ElMessage.success('Type created')
     showNewType.value = false
-    newTypeName.value = ''
+    // очистка формы создания типа
+    newType.value = { name: '', start_time: null, end_time: null, duration_minutes: null }
+    // обновить список типов в селекте
     await fetchTypes('')
+    // выбрать только что созданный тип для текущей формы сервиса
     form.value.service_type_id = created.id
   } catch (e) {
     console.error(e)
-    ElMessage.error(e.message || 'Create type failed')
+    ElMessage.error(e?.message || 'Failed to create')
   } finally {
     creatingType.value = false
   }
